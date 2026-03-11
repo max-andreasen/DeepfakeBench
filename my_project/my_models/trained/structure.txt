@@ -1,0 +1,12 @@
+
+
+trained/ 
+    transformer_dim768_LR-TYPE_lrXX_epochsXX/
+        trained_model.pth           # the trained model weights that can be loaded
+        run_config.json             # some information about the model params
+        results.json                # results on test set and cross dataset
+        checkpoints/                # contains all checkpoints, if option is on
+            transformer_epoch_1.pth
+            ...
+    
+    ...

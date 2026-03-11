@@ -1,0 +1,20 @@
+{
+  "created_utc": "2026-02-23T08:08:45.740022+00:00",
+  "n_requested_videos": 100,
+  "n_saved_embeddings": 100,
+  "n_failures": 0,
+  "out_dir": "clip/embeddings/test/files",
+  "catalogue_file": "clip/embeddings/test/catalogue.csv",
+  "label_map": {
+    "0": "fake",
+    "1": "real"
+  },
+  "observed_labels": [
+    0,
+    1
+  ],
+  "T": 32,
+  "micro_batch_size": 8,
+  "device": "cuda",
+  "embedding_dim": 768
+}

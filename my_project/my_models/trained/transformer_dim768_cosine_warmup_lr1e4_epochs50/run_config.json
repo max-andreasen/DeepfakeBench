@@ -1,0 +1,15 @@
+{
+  "clip_embed_dim": 768,
+  "num_frames": 32,
+  "num_classes": 2,
+  "num_layers": 2,
+  "lr": 0.0001,
+  "weight_decay": 0.0,
+  "batch_size": 32,
+  "num_epochs": 50,
+  "lr_scheduler": "cosine_warmup",
+  "warmup_epochs": 5,
+  "step_size": 10,
+  "step_gamma": 0.5,
+  "created_utc": "2026-03-10T09:54:35.931686+00:00"
+}

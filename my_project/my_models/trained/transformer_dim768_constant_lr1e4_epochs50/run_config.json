@@ -1,0 +1,10 @@
+{
+  "clip_embed_dim": 768,
+  "num_frames": 32,
+  "num_classes": 2,
+  "lr": 0.0001,
+  "weight_decay": 0.0,
+  "batch_size": 32,
+  "num_epochs": 50,
+  "created_utc": "2026-03-02T11:07:40.265901+00:00"
+}

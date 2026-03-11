@@ -5,3 +5,6 @@
 *.pth
 *.pt
 *.dat
+*.mp4
+*.npz
+/datasets

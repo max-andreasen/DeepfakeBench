@@ -1,0 +1,27 @@
+This directory (embeddings/) contains embeddings of video frames
+from the CLIP embedding pipeline.
+
+The file is structured like this: 
+
+embeddings/
+    test/
+        files/
+            video001.npz
+            ...
+            
+    dataset_model_dim_T_run/ (e.g. celeb_df_vit14b_dim768_32_0)
+        catalogue.csv (containing a map of the data)
+        run_config.json (containing information about the CLIP model, params etc)
+        files/
+            video001.npz (embeddings in file)
+            video002.npz
+            ...
+    dataset_model_dim_T_run/ (T is number of frames from videos)
+        catalogue.csv
+        run_config.json 
+        files/
+            video001.npz
+            video002.npz
+            ...
+    structure.txt
+    

@@ -1,0 +1,17 @@
+{
+  "evaluated_utc": "2026-03-10T09:33:31.314217+00:00",
+  "data_split_file": "clip/embeddings/celeb_df_ViT-L-14-336-quickgelu_dim768_T96_0/splits/test20_val10_seed0.csv",
+  "test_samples": 240,
+  "loss": 0.353774,
+  "accuracy": 0.8875,
+  "auc": 0.972669,
+  "precision": 0.982143,
+  "recall": 0.679012,
+  "f1": 0.80292,
+  "confusion": {
+    "tp": 55,
+    "tn": 158,
+    "fp": 1,
+    "fn": 26
+  }
+}
