@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Prerequisites (must be installed before running this script):
+#   sudo apt install cmake libopenblas-dev liblapack-dev
+
 pip install numpy==1.21.5
 pip install pandas==1.4.2
 pip install Pillow==9.0.1

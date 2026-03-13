@@ -44,7 +44,7 @@ WARMUP_EPOCHS=5
 WEIGHTED_LOSS=false
 
 # --- Evaluation ---
-MODEL_DIR="$SCRIPT_DIR/my_models/trained/YOUR_MODEL_DIR"
+MODEL_DIR="$SCRIPT_DIR/my_models/trained/MODEL_DIR"
 
 # =============================================================================
 

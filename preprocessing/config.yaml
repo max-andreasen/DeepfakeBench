@@ -4,7 +4,7 @@ preprocess:
     default: 'FaceForensics++'
   dataset_root_path: # the root path to the dataset
     type: str
-    default: 'F:\'
+    default: '/home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb'
   comp: # the compression level of videos, only in the dataset of FaceForensics++.
     choices: ['raw', 'c23', 'c40']
     default: 'c23'
@@ -13,7 +13,7 @@ preprocess:
     default: 'fixed_num_frames'
   stride: # when 'mode' is 'fixed_stride', 'stride' is the number of frames to skip between each frame extracted.
     type: int
-    default: 10
+    default: 0
   num_frames: # when 'mode' is 'fixed_num_frames', 'num_frames' is the number of frames to extract from each video.
     type: int
     default: 32
