@@ -1,0 +1,279 @@
+2026-04-02 09:30:27,039 - INFO - 49 videos found in /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake
+2026-04-02 09:30:35,123 - WARNING - No faces in frame 1 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:30:35,327 - WARNING - No faces in frame 2 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:30:35,526 - WARNING - No faces in frame 3 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:30:35,707 - WARNING - No faces in frame 4 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:30:35,915 - WARNING - No faces in frame 5 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:30:36,111 - WARNING - No faces in frame 6 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:30:51,381 - INFO - Current time: 2026-04-02 09:30:51
+2026-04-02 09:30:56,169 - INFO - Current time: 2026-04-02 09:30:56
+2026-04-02 09:30:58,430 - INFO - Current time: 2026-04-02 09:30:58
+2026-04-02 09:31:00,927 - INFO - Current time: 2026-04-02 09:31:00
+2026-04-02 09:31:01,488 - INFO - Current time: 2026-04-02 09:31:01
+2026-04-02 09:31:03,532 - INFO - Current time: 2026-04-02 09:31:03
+2026-04-02 09:31:04,325 - INFO - Current time: 2026-04-02 09:31:04
+2026-04-02 09:31:05,236 - INFO - Current time: 2026-04-02 09:31:05
+2026-04-02 09:31:08,804 - INFO - Current time: 2026-04-02 09:31:08
+2026-04-02 09:31:09,158 - INFO - Current time: 2026-04-02 09:31:09
+2026-04-02 09:31:10,803 - INFO - Current time: 2026-04-02 09:31:10
+2026-04-02 09:31:12,710 - INFO - Current time: 2026-04-02 09:31:12
+2026-04-02 09:31:13,302 - WARNING - No faces in frame 17 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0033_fake.mp4
+2026-04-02 09:31:14,758 - INFO - Current time: 2026-04-02 09:31:14
+2026-04-02 09:31:15,083 - INFO - Current time: 2026-04-02 09:31:15
+2026-04-02 09:31:15,932 - WARNING - No faces in frame 28 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0033_fake.mp4
+2026-04-02 09:31:15,941 - WARNING - No faces in frame 187 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:31:16,050 - WARNING - No faces in frame 29 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0033_fake.mp4
+2026-04-02 09:31:16,056 - WARNING - No faces in frame 188 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:31:16,151 - WARNING - No faces in frame 30 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0033_fake.mp4
+2026-04-02 09:31:16,181 - WARNING - No faces in frame 189 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:31:16,257 - WARNING - No faces in frame 31 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0033_fake.mp4
+2026-04-02 09:31:16,331 - WARNING - No faces in frame 190 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:31:16,563 - WARNING - No faces in frame 32 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0033_fake.mp4
+2026-04-02 09:31:16,575 - WARNING - No faces in frame 191 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:31:16,685 - INFO - Current time: 2026-04-02 09:31:16
+2026-04-02 09:31:16,813 - WARNING - No faces in frame 33 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0033_fake.mp4
+2026-04-02 09:31:16,816 - WARNING - No faces in frame 192 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:31:16,924 - WARNING - No faces in frame 34 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0033_fake.mp4
+2026-04-02 09:31:16,945 - WARNING - No faces in frame 193 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:31:17,030 - WARNING - No faces in frame 35 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0033_fake.mp4
+2026-04-02 09:31:17,047 - WARNING - No faces in frame 194 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:31:17,139 - WARNING - No faces in frame 36 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0033_fake.mp4
+2026-04-02 09:31:17,160 - WARNING - No faces in frame 195 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:31:17,237 - WARNING - No faces in frame 37 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0033_fake.mp4
+2026-04-02 09:31:17,273 - WARNING - No faces in frame 196 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:31:17,344 - WARNING - No faces in frame 38 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0033_fake.mp4
+2026-04-02 09:31:17,392 - WARNING - No faces in frame 197 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:31:17,446 - WARNING - No faces in frame 39 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0033_fake.mp4
+2026-04-02 09:31:17,529 - WARNING - No faces in frame 198 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:31:17,589 - WARNING - No faces in frame 40 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0033_fake.mp4
+2026-04-02 09:31:17,652 - WARNING - No faces in frame 199 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:31:17,704 - WARNING - No faces in frame 41 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0033_fake.mp4
+2026-04-02 09:31:17,796 - WARNING - No faces in frame 200 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:31:17,916 - WARNING - No faces in frame 201 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:31:17,987 - WARNING - No faces in frame 43 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0033_fake.mp4
+2026-04-02 09:31:18,021 - WARNING - No faces in frame 202 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0005_fake.mp4
+2026-04-02 09:31:18,266 - WARNING - No faces in frame 44 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0033_fake.mp4
+2026-04-02 09:31:18,375 - INFO - Current time: 2026-04-02 09:31:18
+2026-04-02 09:31:18,508 - WARNING - No faces in frame 45 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0033_fake.mp4
+2026-04-02 09:31:20,835 - INFO - Current time: 2026-04-02 09:31:20
+2026-04-02 09:31:21,433 - WARNING - No faces in frame 59 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0033_fake.mp4
+2026-04-02 09:31:21,522 - WARNING - No faces in frame 60 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0033_fake.mp4
+2026-04-02 09:31:21,701 - WARNING - No faces in frame 128 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0028_fake.mp4
+2026-04-02 09:31:21,760 - WARNING - No faces in frame 129 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0028_fake.mp4
+2026-04-02 09:31:21,825 - WARNING - No faces in frame 130 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0028_fake.mp4
+2026-04-02 09:31:21,890 - WARNING - No faces in frame 131 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0028_fake.mp4
+2026-04-02 09:31:21,961 - WARNING - No faces in frame 132 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0028_fake.mp4
+2026-04-02 09:31:22,022 - WARNING - No faces in frame 133 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0028_fake.mp4
+2026-04-02 09:31:22,085 - WARNING - No faces in frame 134 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0028_fake.mp4
+2026-04-02 09:31:22,159 - WARNING - No faces in frame 135 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0028_fake.mp4
+2026-04-02 09:31:22,212 - WARNING - No faces in frame 136 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0028_fake.mp4
+2026-04-02 09:31:22,291 - WARNING - No faces in frame 137 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0028_fake.mp4
+2026-04-02 09:31:22,363 - WARNING - No faces in frame 138 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0028_fake.mp4
+2026-04-02 09:31:22,584 - INFO - Current time: 2026-04-02 09:31:22
+2026-04-02 09:31:24,465 - INFO - Current time: 2026-04-02 09:31:24
+2026-04-02 09:31:27,469 - INFO - Current time: 2026-04-02 09:31:27
+2026-04-02 09:31:28,069 - INFO - Current time: 2026-04-02 09:31:28
+2026-04-02 09:31:29,463 - INFO - Current time: 2026-04-02 09:31:29
+2026-04-02 09:31:30,381 - INFO - Current time: 2026-04-02 09:31:30
+2026-04-02 09:31:31,351 - INFO - Current time: 2026-04-02 09:31:31
+2026-04-02 09:31:33,664 - INFO - Current time: 2026-04-02 09:31:33
+2026-04-02 09:31:34,151 - WARNING - No faces in frame 126 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0036_fake.mp4
+2026-04-02 09:31:34,195 - WARNING - No faces in frame 127 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0036_fake.mp4
+2026-04-02 09:31:34,257 - WARNING - No faces in frame 128 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0036_fake.mp4
+2026-04-02 09:31:34,307 - WARNING - No faces in frame 129 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0036_fake.mp4
+2026-04-02 09:31:34,358 - WARNING - No faces in frame 130 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0036_fake.mp4
+2026-04-02 09:31:34,416 - WARNING - No faces in frame 131 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0036_fake.mp4
+2026-04-02 09:31:34,480 - WARNING - No faces in frame 132 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0036_fake.mp4
+2026-04-02 09:31:34,532 - WARNING - No faces in frame 133 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0036_fake.mp4
+2026-04-02 09:31:34,587 - WARNING - No faces in frame 134 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0036_fake.mp4
+2026-04-02 09:31:34,682 - WARNING - No faces in frame 135 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0036_fake.mp4
+2026-04-02 09:31:34,738 - WARNING - No faces in frame 136 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0036_fake.mp4
+2026-04-02 09:31:34,795 - WARNING - No faces in frame 137 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0036_fake.mp4
+2026-04-02 09:31:34,845 - WARNING - No faces in frame 138 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0036_fake.mp4
+2026-04-02 09:31:34,891 - WARNING - No faces in frame 139 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0036_fake.mp4
+2026-04-02 09:31:34,946 - WARNING - No faces in frame 140 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0036_fake.mp4
+2026-04-02 09:31:34,993 - WARNING - No faces in frame 141 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0036_fake.mp4
+2026-04-02 09:31:35,034 - WARNING - No faces in frame 142 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0036_fake.mp4
+2026-04-02 09:31:35,084 - WARNING - No faces in frame 143 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0036_fake.mp4
+2026-04-02 09:31:35,104 - INFO - Current time: 2026-04-02 09:31:35
+2026-04-02 09:31:35,984 - INFO - Current time: 2026-04-02 09:31:35
+2026-04-02 09:31:36,617 - INFO - Current time: 2026-04-02 09:31:36
+2026-04-02 09:31:36,829 - INFO - Current time: 2026-04-02 09:31:36
+2026-04-02 09:31:37,164 - INFO - Current time: 2026-04-02 09:31:37
+2026-04-02 09:31:39,269 - INFO - Current time: 2026-04-02 09:31:39
+2026-04-02 09:31:40,272 - INFO - Current time: 2026-04-02 09:31:40
+2026-04-02 09:31:40,666 - INFO - Current time: 2026-04-02 09:31:40
+2026-04-02 09:31:40,971 - INFO - Current time: 2026-04-02 09:31:40
+2026-04-02 09:31:44,009 - INFO - Current time: 2026-04-02 09:31:44
+2026-04-02 09:31:44,145 - INFO - Current time: 2026-04-02 09:31:44
+2026-04-02 09:31:50,050 - INFO - Current time: 2026-04-02 09:31:50
+2026-04-02 09:31:52,833 - INFO - Current time: 2026-04-02 09:31:52
+2026-04-02 09:31:53,952 - INFO - Current time: 2026-04-02 09:31:53
+2026-04-02 09:31:59,333 - INFO - Current time: 2026-04-02 09:31:59
+2026-04-02 09:32:12,641 - WARNING - No faces in frame 455 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0043_fake.mp4
+2026-04-02 09:32:12,780 - WARNING - No faces in frame 457 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0043_fake.mp4
+2026-04-02 09:32:12,833 - WARNING - No faces in frame 458 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0043_fake.mp4
+2026-04-02 09:32:12,883 - WARNING - No faces in frame 459 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0043_fake.mp4
+2026-04-02 09:32:12,934 - WARNING - No faces in frame 460 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0043_fake.mp4
+2026-04-02 09:32:12,983 - WARNING - No faces in frame 461 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0043_fake.mp4
+2026-04-02 09:32:13,032 - WARNING - No faces in frame 462 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0043_fake.mp4
+2026-04-02 09:32:13,083 - WARNING - No faces in frame 463 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0043_fake.mp4
+2026-04-02 09:32:33,755 - WARNING - No faces in frame 720 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/fake/0043_fake.mp4
+2026-04-02 09:32:40,936 - INFO - Current time: 2026-04-02 09:32:40
+2026-04-02 09:32:47,594 - INFO - Current time: 2026-04-02 09:32:47
+2026-04-02 09:32:50,148 - INFO - Current time: 2026-04-02 09:32:50
+2026-04-02 09:32:56,129 - INFO - Current time: 2026-04-02 09:32:56
+2026-04-02 09:33:00,209 - INFO - Current time: 2026-04-02 09:33:00
+2026-04-02 09:33:01,300 - INFO - Current time: 2026-04-02 09:33:01
+2026-04-02 09:33:29,853 - INFO - Current time: 2026-04-02 09:33:29
+2026-04-02 09:33:35,379 - INFO - Current time: 2026-04-02 09:33:35
+2026-04-02 09:33:50,872 - INFO - Current time: 2026-04-02 09:33:50
+2026-04-02 09:33:50,881 - INFO - Total time taken: 3.40 minutes
+2026-04-02 09:33:50,884 - INFO - 49 videos found in /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real
+2026-04-02 09:34:15,999 - INFO - Current time: 2026-04-02 09:34:15
+2026-04-02 09:34:20,140 - INFO - Current time: 2026-04-02 09:34:20
+2026-04-02 09:34:23,346 - INFO - Current time: 2026-04-02 09:34:23
+2026-04-02 09:34:26,118 - INFO - Current time: 2026-04-02 09:34:26
+2026-04-02 09:34:26,907 - INFO - Current time: 2026-04-02 09:34:26
+2026-04-02 09:34:28,430 - INFO - Current time: 2026-04-02 09:34:28
+2026-04-02 09:34:29,258 - INFO - Current time: 2026-04-02 09:34:29
+2026-04-02 09:34:29,844 - INFO - Current time: 2026-04-02 09:34:29
+2026-04-02 09:34:33,453 - INFO - Current time: 2026-04-02 09:34:33
+2026-04-02 09:34:33,876 - INFO - Current time: 2026-04-02 09:34:33
+2026-04-02 09:34:36,208 - WARNING - No faces in frame 10 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:36,307 - WARNING - No faces in frame 11 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:36,419 - WARNING - No faces in frame 12 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:36,530 - WARNING - No faces in frame 13 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:36,633 - WARNING - No faces in frame 14 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:36,896 - INFO - Current time: 2026-04-02 09:34:36
+2026-04-02 09:34:36,905 - WARNING - No faces in frame 15 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:37,127 - WARNING - No faces in frame 16 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:37,244 - WARNING - No faces in frame 17 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:37,355 - WARNING - No faces in frame 18 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:37,474 - WARNING - No faces in frame 19 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:37,585 - WARNING - No faces in frame 20 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:38,701 - WARNING - No faces in frame 26 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:39,088 - INFO - Current time: 2026-04-02 09:34:39
+2026-04-02 09:34:39,681 - INFO - Current time: 2026-04-02 09:34:39
+2026-04-02 09:34:39,879 - WARNING - No faces in frame 12 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0034.mp4
+2026-04-02 09:34:39,900 - WARNING - No faces in frame 29 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:39,988 - WARNING - No faces in frame 13 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0034.mp4
+2026-04-02 09:34:40,008 - WARNING - No faces in frame 30 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:40,130 - WARNING - No faces in frame 31 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:40,225 - WARNING - No faces in frame 32 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:40,344 - WARNING - No faces in frame 33 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:40,462 - WARNING - No faces in frame 34 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:40,559 - WARNING - No faces in frame 35 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:40,962 - INFO - Current time: 2026-04-02 09:34:40
+2026-04-02 09:34:40,969 - WARNING - No faces in frame 36 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:41,229 - WARNING - No faces in frame 185 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0005.mp4
+2026-04-02 09:34:41,316 - WARNING - No faces in frame 38 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:41,447 - WARNING - No faces in frame 39 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:41,447 - WARNING - No faces in frame 186 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0005.mp4
+2026-04-02 09:34:41,590 - WARNING - No faces in frame 187 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0005.mp4
+2026-04-02 09:34:41,591 - WARNING - No faces in frame 40 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:41,719 - WARNING - No faces in frame 41 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:41,724 - WARNING - No faces in frame 188 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0005.mp4
+2026-04-02 09:34:41,855 - WARNING - No faces in frame 189 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0005.mp4
+2026-04-02 09:34:41,983 - WARNING - No faces in frame 190 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0005.mp4
+2026-04-02 09:34:42,009 - WARNING - No faces in frame 43 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:42,132 - WARNING - No faces in frame 44 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:42,140 - WARNING - No faces in frame 191 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0005.mp4
+2026-04-02 09:34:42,241 - WARNING - No faces in frame 45 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:42,292 - WARNING - No faces in frame 192 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0005.mp4
+2026-04-02 09:34:42,396 - WARNING - No faces in frame 193 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0005.mp4
+2026-04-02 09:34:42,551 - WARNING - No faces in frame 194 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0005.mp4
+2026-04-02 09:34:43,009 - INFO - Current time: 2026-04-02 09:34:43
+2026-04-02 09:34:43,012 - WARNING - No faces in frame 195 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0005.mp4
+2026-04-02 09:34:43,157 - WARNING - No faces in frame 196 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0005.mp4
+2026-04-02 09:34:43,281 - WARNING - No faces in frame 197 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0005.mp4
+2026-04-02 09:34:43,401 - WARNING - No faces in frame 198 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0005.mp4
+2026-04-02 09:34:43,536 - WARNING - No faces in frame 199 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0005.mp4
+2026-04-02 09:34:43,673 - WARNING - No faces in frame 200 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0005.mp4
+2026-04-02 09:34:43,829 - WARNING - No faces in frame 201 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0005.mp4
+2026-04-02 09:34:44,000 - WARNING - No faces in frame 202 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0005.mp4
+2026-04-02 09:34:44,269 - INFO - Current time: 2026-04-02 09:34:44
+2026-04-02 09:34:45,165 - WARNING - No faces in frame 57 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0033.mp4
+2026-04-02 09:34:46,633 - INFO - Current time: 2026-04-02 09:34:46
+2026-04-02 09:34:48,173 - WARNING - No faces in frame 128 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0028.mp4
+2026-04-02 09:34:48,225 - WARNING - No faces in frame 129 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0028.mp4
+2026-04-02 09:34:48,291 - WARNING - No faces in frame 130 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0028.mp4
+2026-04-02 09:34:48,370 - WARNING - No faces in frame 131 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0028.mp4
+2026-04-02 09:34:48,441 - WARNING - No faces in frame 132 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0028.mp4
+2026-04-02 09:34:48,495 - WARNING - No faces in frame 133 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0028.mp4
+2026-04-02 09:34:48,576 - WARNING - No faces in frame 134 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0028.mp4
+2026-04-02 09:34:48,657 - WARNING - No faces in frame 135 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0028.mp4
+2026-04-02 09:34:48,705 - WARNING - No faces in frame 136 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0028.mp4
+2026-04-02 09:34:48,770 - WARNING - No faces in frame 137 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0028.mp4
+2026-04-02 09:34:48,837 - WARNING - No faces in frame 138 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0028.mp4
+2026-04-02 09:34:49,107 - INFO - Current time: 2026-04-02 09:34:49
+2026-04-02 09:34:49,891 - INFO - Current time: 2026-04-02 09:34:49
+2026-04-02 09:34:52,410 - INFO - Current time: 2026-04-02 09:34:52
+2026-04-02 09:34:53,408 - INFO - Current time: 2026-04-02 09:34:53
+2026-04-02 09:34:56,684 - INFO - Current time: 2026-04-02 09:34:56
+2026-04-02 09:34:57,270 - WARNING - No faces in frame 108 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0036.mp4
+2026-04-02 09:34:57,323 - WARNING - No faces in frame 109 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0036.mp4
+2026-04-02 09:34:58,295 - INFO - Current time: 2026-04-02 09:34:58
+2026-04-02 09:34:59,624 - INFO - Current time: 2026-04-02 09:34:59
+2026-04-02 09:35:00,122 - WARNING - No faces in frame 126 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0036.mp4
+2026-04-02 09:35:00,178 - WARNING - No faces in frame 127 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0036.mp4
+2026-04-02 09:35:00,240 - WARNING - No faces in frame 128 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0036.mp4
+2026-04-02 09:35:00,286 - WARNING - No faces in frame 129 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0036.mp4
+2026-04-02 09:35:00,346 - WARNING - No faces in frame 130 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0036.mp4
+2026-04-02 09:35:00,391 - WARNING - No faces in frame 131 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0036.mp4
+2026-04-02 09:35:00,464 - WARNING - No faces in frame 132 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0036.mp4
+2026-04-02 09:35:00,524 - WARNING - No faces in frame 133 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0036.mp4
+2026-04-02 09:35:00,586 - WARNING - No faces in frame 134 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0036.mp4
+2026-04-02 09:35:00,652 - WARNING - No faces in frame 135 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0036.mp4
+2026-04-02 09:35:00,710 - WARNING - No faces in frame 136 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0036.mp4
+2026-04-02 09:35:00,788 - WARNING - No faces in frame 137 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0036.mp4
+2026-04-02 09:35:01,064 - INFO - Current time: 2026-04-02 09:35:01
+2026-04-02 09:35:01,071 - WARNING - No faces in frame 138 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0036.mp4
+2026-04-02 09:35:01,245 - WARNING - No faces in frame 139 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0036.mp4
+2026-04-02 09:35:01,297 - WARNING - No faces in frame 140 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0036.mp4
+2026-04-02 09:35:01,350 - WARNING - No faces in frame 141 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0036.mp4
+2026-04-02 09:35:01,414 - WARNING - No faces in frame 142 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0036.mp4
+2026-04-02 09:35:01,469 - WARNING - No faces in frame 143 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0036.mp4
+2026-04-02 09:35:01,492 - INFO - Current time: 2026-04-02 09:35:01
+2026-04-02 09:35:02,172 - INFO - Current time: 2026-04-02 09:35:02
+2026-04-02 09:35:03,901 - INFO - Current time: 2026-04-02 09:35:03
+2026-04-02 09:35:04,134 - INFO - Current time: 2026-04-02 09:35:04
+2026-04-02 09:35:04,337 - INFO - Current time: 2026-04-02 09:35:04
+2026-04-02 09:35:06,473 - INFO - Current time: 2026-04-02 09:35:06
+2026-04-02 09:35:08,439 - INFO - Current time: 2026-04-02 09:35:08
+2026-04-02 09:35:08,623 - INFO - Current time: 2026-04-02 09:35:08
+2026-04-02 09:35:09,781 - INFO - Current time: 2026-04-02 09:35:09
+2026-04-02 09:35:10,682 - INFO - Current time: 2026-04-02 09:35:10
+2026-04-02 09:35:11,432 - INFO - Current time: 2026-04-02 09:35:11
+2026-04-02 09:35:18,063 - INFO - Current time: 2026-04-02 09:35:18
+2026-04-02 09:35:21,967 - INFO - Current time: 2026-04-02 09:35:21
+2026-04-02 09:35:23,297 - INFO - Current time: 2026-04-02 09:35:23
+2026-04-02 09:35:28,517 - INFO - Current time: 2026-04-02 09:35:28
+2026-04-02 09:35:44,730 - WARNING - No faces in frame 494 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0043.mp4
+2026-04-02 09:35:53,823 - WARNING - No faces in frame 606 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0043.mp4
+2026-04-02 09:35:53,979 - WARNING - No faces in frame 608 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0043.mp4
+2026-04-02 09:36:06,918 - WARNING - No faces in frame 768 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0043.mp4
+2026-04-02 09:36:06,970 - WARNING - No faces in frame 769 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0043.mp4
+2026-04-02 09:36:07,273 - WARNING - No faces in frame 773 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0043.mp4
+2026-04-02 09:36:07,329 - WARNING - No faces in frame 774 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0043.mp4
+2026-04-02 09:36:08,528 - WARNING - No faces in frame 789 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0043.mp4
+2026-04-02 09:36:17,751 - INFO - Current time: 2026-04-02 09:36:17
+2026-04-02 09:36:20,715 - WARNING - No faces in frame 686 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0046.mp4
+2026-04-02 09:36:20,791 - WARNING - No faces in frame 687 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0046.mp4
+2026-04-02 09:36:20,865 - WARNING - No faces in frame 688 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0046.mp4
+2026-04-02 09:36:20,872 - INFO - Current time: 2026-04-02 09:36:20
+2026-04-02 09:36:26,515 - INFO - Current time: 2026-04-02 09:36:26
+2026-04-02 09:36:30,626 - WARNING - No faces in frame 1064 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0043.mp4
+2026-04-02 09:36:30,648 - INFO - Current time: 2026-04-02 09:36:30
+2026-04-02 09:36:30,675 - WARNING - No faces in frame 1065 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0043.mp4
+2026-04-02 09:36:30,725 - WARNING - No faces in frame 1066 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0043.mp4
+2026-04-02 09:36:30,774 - WARNING - No faces in frame 1067 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0043.mp4
+2026-04-02 09:36:30,823 - WARNING - No faces in frame 1068 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0043.mp4
+2026-04-02 09:36:30,872 - WARNING - No faces in frame 1069 of /home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb/UADFV/real/0043.mp4
+2026-04-02 09:36:32,318 - INFO - Current time: 2026-04-02 09:36:32
+2026-04-02 09:36:35,322 - INFO - Current time: 2026-04-02 09:36:35
+2026-04-02 09:37:00,554 - INFO - Current time: 2026-04-02 09:37:00
+2026-04-02 09:37:04,129 - INFO - Current time: 2026-04-02 09:37:04
+2026-04-02 09:37:20,440 - INFO - Current time: 2026-04-02 09:37:20
+2026-04-02 09:37:20,441 - INFO - Total time taken: 3.49 minutes
+2026-04-02 09:37:20,445 - INFO - Face cropping complete!

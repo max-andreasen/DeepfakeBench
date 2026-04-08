@@ -1,7 +1,7 @@
 preprocess:
   dataset_name: # the name of dataset
     choices: ['FaceForensics++','Celeb-DF-v1', 'Celeb-DF-v2', 'DFDCP', 'DFDC', 'DeeperForensics-1.0','UADFV']
-    default: 'FaceForensics++'
+    default: 'Celeb-DF-v1'
   dataset_root_path: # the root path to the dataset
     type: str
     default: '/home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb'
@@ -10,10 +10,10 @@ preprocess:
     default: 'c23'
   mode: # based on the numbers of frame or skip the specific stride of frames.
     choices: ['fixed_num_frames', 'fixed_stride']
-    default: 'fixed_num_frames'
+    default: 'fixed_stride'
   stride: # when 'mode' is 'fixed_stride', 'stride' is the number of frames to skip between each frame extracted.
     type: int
-    default: 0
+    default: 1
   num_frames: # when 'mode' is 'fixed_num_frames', 'num_frames' is the number of frames to extract from each video.
     type: int
     default: 32
@@ -36,6 +36,26 @@ rearrange:
               'end_to_end_level_5','end_to_end_mix_2_distortions','end_to_end_mix_3_distortions',
               'end_to_end_mix_4_distortions','end_to_end_random_level','reenact_postprocess']
     default: 'end_to_end'
+
+preprocess_mtcnn:
+  dataset_name:
+    choices: ['FaceForensics++']
+    default: 'FaceForensics++'
+  dataset_root_path:
+    type: str
+    default: '/home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb'
+  comp:
+    choices: ['raw', 'c23', 'c40']
+    default: 'c23'
+  device:
+    choices: ['cuda', 'cpu']
+    default: 'cuda'
+  output_resolution:
+    type: int
+    default: 256
+  bbox_padding_scale:
+    type: float
+    default: 1.3
 
 to_lmdb:
   dataset_name: # the name of dataset

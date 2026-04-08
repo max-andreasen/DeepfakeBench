@@ -255,7 +255,12 @@ def video_manipulate(
         """
         Helper function for cropping face and extracting landmarks.
         """
-        
+
+        # Skip if already processed
+        frames_dir = save_path / 'frames' / org_path.stem
+        if frames_dir.exists() and any(frames_dir.iterdir()):
+            return
+
         # Open the video file
         assert org_path.exists(), f"Video file {org_path} does not exist."
         cap_org = cv2.VideoCapture(str(org_path))
