@@ -56,6 +56,9 @@ preprocess_mtcnn:
   bbox_padding_scale:
     type: float
     default: 1.3
+  min_frames:
+    type: int
+    default: 32
 
 to_lmdb:
   dataset_name: # the name of dataset

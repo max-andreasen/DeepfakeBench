@@ -146,10 +146,13 @@ def process_single_video(
     output_resolution,
     bbox_padding_scale,
     logger,
+    min_frames=32,
 ):
     """
     Process a single video: detect faces with MTCNN on every frame, compute
     union bounding box, crop all frames to that box, and save results.
+
+    Videos with fewer than min_frames are skipped with a warning.
     """
     video_stem = video_path.stem
 
@@ -190,6 +193,13 @@ def process_single_video(
 
     if total_frames == 0:
         logger.error(f"No frames read from {video_path}")
+        return
+
+    if total_frames < min_frames:
+        logger.warning(
+            f"Video {video_path.name} has only {total_frames} frames "
+            f"(need {min_frames}) — skipping"
+        )
         return
 
     # --- Phase 2: Batch MTCNN detection ---
@@ -282,13 +292,14 @@ def process_single_video(
 
 
 
-def preprocess_subdataset(sub_dataset_path, output_base_path, detector, output_resolution, bbox_padding_scale, logger):
+def preprocess_subdataset(sub_dataset_path, output_base_path, detector, output_resolution, bbox_padding_scale, logger, min_frames=32):
     """Process all videos in a single sub-dataset directory.
 
     Args:
         sub_dataset_path: Path to source videos (e.g. .../original_sequences/youtube/c23)
         output_base_path: Where to save mtcnn_frames/ and mtcnn_bboxes/.
                           Same as sub_dataset_path if no separate output disk is configured.
+        min_frames: Minimum number of frames required to process a video.
     """
     movies_path_list = sorted([
         Path(p) for p in glob.glob(os.path.join(sub_dataset_path, '**/*.mp4'), recursive=True)
@@ -310,6 +321,7 @@ def preprocess_subdataset(sub_dataset_path, output_base_path, detector, output_r
                 output_resolution,
                 bbox_padding_scale,
                 logger,
+                min_frames=min_frames,
             )
         except Exception as e:
             logger.error(f"Error processing video {movie_path}: {e}")
@@ -331,6 +343,7 @@ if __name__ == '__main__':
     device = cfg['device']['default']
     output_resolution = cfg['output_resolution']['default']
     bbox_padding_scale = cfg['bbox_padding_scale']['default']
+    min_frames = cfg['min_frames']['default']
 
     dataset_path = Path(os.path.join(dataset_root_path, dataset_name))
 
@@ -339,7 +352,7 @@ if __name__ == '__main__':
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
     logger = create_logger(log_path)
     logger.info(f"Starting MTCNN preprocessing for {dataset_name}")
-    logger.info(f"Config: device={device}, resolution={output_resolution}, padding={bbox_padding_scale}")
+    logger.info(f"Config: device={device}, resolution={output_resolution}, padding={bbox_padding_scale}, min_frames={min_frames}")
 
     # Initialize MTCNN detector (single instance, GPU)
     detector = MTCNN(
@@ -382,7 +395,8 @@ if __name__ == '__main__':
     for sub_dataset_path in sub_dataset_paths:
         logger.info(f"Processing: {sub_dataset_path}")
         preprocess_subdataset(
-            sub_dataset_path, sub_dataset_path, detector, output_resolution, bbox_padding_scale, logger
+            sub_dataset_path, sub_dataset_path, detector, output_resolution, bbox_padding_scale, logger,
+            min_frames=min_frames,
         )
 
     total_minutes = (time.monotonic() - total_start) / 60
