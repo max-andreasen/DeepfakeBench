@@ -9,3 +9,19 @@
 2026-04-09 09:11:17,081 - INFO - Processing: /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/Celeb-synthesis
 2026-04-09 09:13:18,074 - INFO - 795 videos found in /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/Celeb-synthesis
 2026-04-09 09:13:18,074 - INFO - Output directory: /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/Celeb-synthesis
+2026-04-10 12:22:59,778 - INFO - Starting MTCNN preprocessing for Celeb-DF-v1
+2026-04-10 12:22:59,778 - INFO - Config: device=cuda, resolution=256, padding=1.15, num_frames=96
+2026-04-10 12:23:00,112 - INFO - MTCNN detector initialized on cuda
+2026-04-10 12:23:00,113 - INFO - Processing: /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/Celeb-real
+2026-04-10 12:23:00,418 - INFO - 158 videos found in /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/Celeb-real
+2026-04-10 12:23:00,418 - INFO - Output directory: /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/Celeb-real
+2026-04-10 12:23:00,462 - INFO - Sub-dataset /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/Celeb-real done in 0.00 minutes
+2026-04-10 12:23:00,462 - INFO - Processing: /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/Celeb-synthesis
+2026-04-10 12:23:01,928 - INFO - 795 videos found in /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/Celeb-synthesis
+2026-04-10 12:23:01,928 - INFO - Output directory: /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/Celeb-synthesis
+2026-04-10 12:24:21,833 - INFO - Sub-dataset /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/Celeb-synthesis done in 1.33 minutes
+2026-04-10 12:24:21,833 - INFO - Processing: /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/YouTube-real
+2026-04-10 12:24:22,122 - INFO - 250 videos found in /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/YouTube-real
+2026-04-10 12:24:22,122 - INFO - Output directory: /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/YouTube-real
+2026-04-10 12:32:14,025 - INFO - Sub-dataset /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/YouTube-real done in 7.87 minutes
+2026-04-10 12:32:14,025 - INFO - All done! Total time: 9.23 minutes

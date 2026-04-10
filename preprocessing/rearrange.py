@@ -64,7 +64,7 @@ import pandas as pd
 from pathlib import Path
 
 
-def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, compression_level='c23', perturbation = 'end_to_end'):
+def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, compression_level='c23', perturbation = 'end_to_end', frame_dir='frames'):
     """
     Description:
         - Generate a JSON file containing information about the specified datasets' videos and frames.
@@ -142,7 +142,7 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
                     dataset_dict['FaceForensics++']['FF-real']['val'][compression_level] = {}
             
                 # Iterate over all videos
-                for video_path in os.scandir(os.path.join(dataset_path, 'original_sequences', 'youtube', compression_level, 'frames')):
+                for video_path in os.scandir(os.path.join(dataset_path, 'original_sequences', 'youtube', compression_level, frame_dir)):
                     if video_path.is_dir():
                         video_name = video_path.name
                         mode = video_to_mode[video_name]
@@ -161,7 +161,7 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
                     dataset_dict['FaceForensics++']['DFD_real']['test'][compression_level] = {}
                     dataset_dict['FaceForensics++']['DFD_real']['val'][compression_level] = {}
                 # Iterate over all videos
-                for video_path in os.scandir(os.path.join(dataset_path, 'original_sequences', 'actors', compression_level, 'frames')):
+                for video_path in os.scandir(os.path.join(dataset_path, 'original_sequences', 'actors', compression_level, frame_dir)):
                     if video_path.is_dir():
                         video_name = video_path.name
                         frame_paths = [os.path.join(video_path, frame.name) for frame in os.scandir(video_path)]
@@ -187,7 +187,7 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
                             dataset_dict['FaceForensics++'][ff_dict[label]]['val'][compression_level] = {}
                             # Iterate over all videos
 
-                            for video_path in os.scandir(os.path.join(dataset_path, 'manipulated_sequences', label, compression_level, 'frames')):
+                            for video_path in os.scandir(os.path.join(dataset_path, 'manipulated_sequences', label, compression_level, frame_dir)):
                                 if video_path.is_dir():
                                     video_name = video_path.name
                                     frame_paths = [os.path.join(video_path, frame.name) for frame in os.scandir(video_path)]
@@ -264,19 +264,21 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
                 continue
             if folder.name in ['Celeb-real', 'YouTube-real']:
                 label = 'CelebDFv1_real'
-            else:
+            elif folder.name in ['Celeb-synthesis']:
                 label = 'CelebDFv1_fake'
+            else:
+                continue
             assert label in ['CelebDFv1_real', 'CelebDFv1_fake'], 'Invalid label: {}'.format(label)
             dataset_dict[dataset_name][label] = {}
             dataset_dict[dataset_name][label]['train'] = {}
             dataset_dict[dataset_name][label]['val'] = {}
             dataset_dict[dataset_name][label]['test'] = {}
-            for video_path in os.scandir(os.path.join(dataset_path, folder.name, 'frames')):
+            for video_path in os.scandir(os.path.join(dataset_path, folder.name, frame_dir)):
                 if video_path.is_dir():
                     video_name = video_path.name
                     frame_paths = [os.path.join(video_path, frame.name) for frame in os.scandir(video_path)]
                     dataset_dict[dataset_name][label]['train'][video_name] = {'label': label, 'frames': frame_paths}
-        
+
         # Special case for test&val data of Celeb-DF-v1/2
         with open(os.path.join(dataset_root_path, dataset_name, 'List_of_testing_videos.txt'), 'r') as f:
             lines = f.readlines()
@@ -287,10 +289,10 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
                 label = 'CelebDFv1_fake'
             else:
                 raise ValueError(f"wrong in processing vidname {dataset_name}: {line}")
-            
+
             vidname = line.split('\n')[0].split('/')[-1].split('.mp4')[0]
             frame_paths = glob.glob(
-                os.path.join(dataset_root_path, dataset_name, line.split(' ')[1].split('/')[0], 'frames', vidname, '*png'))
+                os.path.join(dataset_root_path, dataset_name, line.split(' ')[1].split('/')[0], frame_dir, vidname, '*png'))
             dataset_dict[dataset_name][label]['test'][vidname] = {'label': label, 'frames': frame_paths}
             dataset_dict[dataset_name][label]['val'][vidname] = {'label': label, 'frames': frame_paths}
 
@@ -304,19 +306,21 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
                 continue
             if folder.name in ['Celeb-real', 'YouTube-real']:
                 label = 'CelebDFv2_real'
-            else:
+            elif folder.name in ['Celeb-synthesis']:
                 label = 'CelebDFv2_fake'
+            else:
+                continue
             assert label in ['CelebDFv2_real', 'CelebDFv2_fake'], 'Invalid label: {}'.format(label)
             dataset_dict[dataset_name][label] = {}
             dataset_dict[dataset_name][label]['train'] = {}
             dataset_dict[dataset_name][label]['val'] = {}
             dataset_dict[dataset_name][label]['test'] = {}
-            for video_path in os.scandir(os.path.join(dataset_path, folder.name, 'frames')):
+            for video_path in os.scandir(os.path.join(dataset_path, folder.name, frame_dir)):
                 if video_path.is_dir():
                     video_name = video_path.name
                     frame_paths = [os.path.join(video_path, frame.name) for frame in os.scandir(video_path)]
                     dataset_dict[dataset_name][label]['train'][video_name] = {'label': label, 'frames': frame_paths}
-        
+
         # Special case for test&val data of Celeb-DF-v1/2
         with open(os.path.join(dataset_root_path, dataset_name, 'List_of_testing_videos.txt'), 'r') as f:
             lines = f.readlines()
@@ -327,10 +331,10 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
                 label = 'CelebDFv2_fake'
             else:
                 raise ValueError(f"wrong in processing vidname {dataset_name}: {line}")
-            
+
             vidname = line.split('\n')[0].split('/')[-1].split('.mp4')[0]
             frame_paths = glob.glob(
-                os.path.join(dataset_root_path, dataset_name, line.split(' ')[1].split('/')[0], 'frames', vidname, '*png'))
+                os.path.join(dataset_root_path, dataset_name, line.split(' ')[1].split('/')[0], frame_dir, vidname, '*png'))
             dataset_dict[dataset_name][label]['test'][vidname] = {'label': label, 'frames': frame_paths}
             dataset_dict[dataset_name][label]['val'][vidname] = {'label': label, 'frames': frame_paths}
 
@@ -348,8 +352,8 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
         for dataset in dataset_info.keys():
             index = dataset.split('/')[0]
             vidname = dataset.split('/')[-1].split(".")[0]
-            if Path(os.path.join(dataset_path, index, 'frames', vidname)).exists():
-                frame_paths = glob.glob(os.path.join(dataset_path, index, 'frames', vidname, '*png'))
+            if Path(os.path.join(dataset_path, index, frame_dir, vidname)).exists():
+                frame_paths = glob.glob(os.path.join(dataset_path, index, frame_dir, vidname, '*png'))
                 if len(frame_paths) == 0:
                     continue
                 label = dataset_info[dataset]['label']
@@ -384,7 +388,7 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
                     vidname = row['filename'].split('.mp4')[0]
                     label = labels[row['label']]
                     assert label in ['DFDC_Real','DFDC_Fake'], 'Invalid label: {}'.format(label)
-                    frame_paths = glob.glob(os.path.join(dataset_path, folder.name,'frames', vidname, '*png'))
+                    frame_paths = glob.glob(os.path.join(dataset_path, folder.name, frame_dir, vidname, '*png'))
                     if len(frame_paths) == 0:
                         continue
                     dataset_dict[dataset_name][label]['test'][vidname] = {'label': label, 'frames': frame_paths}
@@ -399,7 +403,7 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
                     print('processing {}th file in 50 files.'.format(num_file))
                     with open(os.path.join(dfdc_train_part, 'metadata.json'), 'r') as f:
                             metadata = json.load(f)
-                    for video_path in os.scandir(os.path.join(dfdc_train_part, 'frames')):
+                    for video_path in os.scandir(os.path.join(dfdc_train_part, frame_dir)):
                         if video_path.is_dir():
                             video_name = video_path.name
                             label = metadata[video_name + ".mp4"]["label"]
@@ -429,7 +433,7 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
         if not Path(os.path.join(dataset_path, 'manipulated_videos', perturbation)).exists():
             raise ValueError(f"wrong in processing perturbation {perturbation} in manipulated_videos")
         print(f"processing perturbation {perturbation} in manipulated_videos")
-        for video_path in os.scandir(os.path.join(dataset_path, 'manipulated_videos', perturbation, 'frames')):
+        for video_path in os.scandir(os.path.join(dataset_path, 'manipulated_videos', perturbation, frame_dir)):
             if video_path.is_dir():
                 video_name = video_path.name
                 if video_name in train_txt:
@@ -452,7 +456,7 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
             if not os.path.isdir(actor_path):
                 continue
             label = 'DF_real'
-            video_paths = [os.path.join(actor_path, 'frames', video.name) for video in os.scandir(os.path.join(actor_path, 'frames'))]
+            video_paths = [os.path.join(actor_path, frame_dir, video.name) for video in os.scandir(os.path.join(actor_path, frame_dir))]
             for video_path in video_paths:
                 video_name = video_path.split('/')[-1]
                 frame_paths = [os.path.join(video_path, frame.name) for frame in os.scandir(video_path)]
@@ -473,7 +477,7 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
             if not os.path.isdir(folder):
                 continue
             elif folder.name in ['fake']:
-                for video_path in os.scandir(os.path.join(dataset_path, folder.name, 'frames')):
+                for video_path in os.scandir(os.path.join(dataset_path, folder.name, frame_dir)):
                     if video_path.is_dir():
                         video_name = video_path.name
                         label = 'UADFV_Fake'
@@ -482,7 +486,7 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
                         dataset_dict[dataset_name][label]['test'][video_name] = {'label': label, 'frames': frame_paths}
                         dataset_dict[dataset_name][label]['val'][video_name] = {'label': label, 'frames': frame_paths}
             elif folder.name in ['real']:
-                for video_path in os.scandir(os.path.join(dataset_path, folder.name, 'frames')):
+                for video_path in os.scandir(os.path.join(dataset_path, folder.name, frame_dir)):
                     if video_path.is_dir():
                         video_name = video_path.name
                         label = 'UADFV_Real'
@@ -513,5 +517,6 @@ if __name__ == '__main__':
     output_file_path = config['rearrange']['output_file_path']['default']
     comp = config['rearrange']['comp']['default']
     perturbation = config['rearrange']['perturbation']['default']
+    frame_dir = config['rearrange']['frame_dir']['default']
     # Call the generate_dataset_file function
-    generate_dataset_file(dataset_name, dataset_root_path, output_file_path, comp, perturbation)
+    generate_dataset_file(dataset_name, dataset_root_path, output_file_path, comp, perturbation, frame_dir)
