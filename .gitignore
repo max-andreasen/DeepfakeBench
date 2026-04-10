@@ -8,4 +8,5 @@
 *.mp4
 *.npz
 /datasets
+preprocessing/dataset_json_mtcnn/
 CLAUDE.md
