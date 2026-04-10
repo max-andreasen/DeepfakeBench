@@ -11,6 +11,8 @@ import yaml
 import logging
 import datetime
 import glob
+import random
+import shutil
 import concurrent.futures
 import numpy as np
 from tqdm import tqdm
@@ -145,28 +147,28 @@ def process_single_video(
     detector,
     output_resolution,
     bbox_padding_scale,
+    num_frames,
     logger,
 ):
     """
-    Process a single video: detect faces with MTCNN on every frame, compute
-    union bounding box, crop all frames to that box, and save results.
+    Process a single video: sample a random consecutive clip of num_frames,
+    detect faces with MTCNN, compute union bounding box, crop all frames
+    to that box, and save results.
     """
     video_stem = video_path.stem
 
     frames_dir = save_path / 'mtcnn_frames' / video_stem
     bbox_file = save_path / 'mtcnn_bboxes' / f'{video_stem}.json'
 
-    # Skip if already fully processed — check bbox JSON for expected frame count
+    # Skip if already fully processed (exactly num_frames PNGs)
     if frames_dir.exists() and bbox_file.exists():
-        with open(bbox_file, 'r') as f:
-            meta = json.load(f)
-        expected = meta.get('total_frames', 0)
         existing = len(list(frames_dir.glob('*.png')))
-        if existing >= expected:
-            logger.info(f"Skipping {video_path.name} — already processed ({existing} frames)")
+        if existing == num_frames:
             return
-        else:
-            logger.info(f"Re-processing {video_path.name} — incomplete ({existing}/{expected} frames)")
+        # Incomplete — wipe and redo with a fresh random sample
+        logger.info(f"Re-processing {video_path.name} — incomplete ({existing}/{num_frames} frames)")
+        shutil.rmtree(frames_dir, ignore_errors=True)
+        bbox_file.unlink(missing_ok=True)
 
     # Open video
     cap = cv2.VideoCapture(str(video_path))
@@ -174,22 +176,29 @@ def process_single_video(
         logger.error(f"Failed to open {video_path}")
         return
 
-    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    total_video_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    # --- Phase 1: Read all frames ---
+    if total_video_frames < num_frames:
+        logger.error(f"Video {video_path.name} has only {total_video_frames} frames (need {num_frames})")
+        cap.release()
+        return
+
+    # --- Phase 1: Sample random start and read consecutive frames ---
+    start_frame = random.randint(0, total_video_frames - num_frames)
+    cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+
     raw_frames = []
-    for idx in range(frame_count):
+    for _ in range(num_frames):
         ret, frame = cap.read()
         if not ret:
             break
         raw_frames.append(frame)
     cap.release()
-    total_frames = len(raw_frames)
 
-    if total_frames == 0:
-        logger.error(f"No frames read from {video_path}")
+    if len(raw_frames) < num_frames:
+        logger.error(f"Only read {len(raw_frames)}/{num_frames} frames from {video_path.name} (start={start_frame})")
         return
 
     # --- Phase 2: Batch MTCNN detection ---
@@ -197,7 +206,7 @@ def process_single_video(
     per_frame_bboxes = {}
     pil_frames = [Image.fromarray(cv2.cvtColor(f, cv2.COLOR_BGR2RGB)) for f in raw_frames]
 
-    for batch_start in range(0, total_frames, batch_size):
+    for batch_start in range(0, num_frames, batch_size):
         batch = pil_frames[batch_start:batch_start + batch_size]
         batch_boxes, batch_probs = detector.detect(batch)
 
@@ -212,27 +221,27 @@ def process_single_video(
 
     # Check detection rate
     detected_count = len(per_frame_bboxes)
-    missed_count = total_frames - detected_count
+    missed_count = num_frames - detected_count
     if detected_count == 0:
         logger.error(f"No faces detected in any frame of {video_path.name}")
         return
 
-    if missed_count > 0 and missed_count / total_frames > 0.1:
+    if missed_count > 0 and missed_count / num_frames > 0.1:
         logger.warning(
-            f"{video_path.name}: {missed_count}/{total_frames} frames missed "
-            f"({missed_count / total_frames:.1%})"
+            f"{video_path.name}: {missed_count}/{num_frames} frames missed "
+            f"({missed_count / num_frames:.1%})"
         )
 
-    # --- Phase 2: Interpolate missing bboxes ---
-    all_bboxes = interpolate_bboxes(per_frame_bboxes, total_frames)
+    # --- Phase 3: Interpolate missing bboxes ---
+    all_bboxes = interpolate_bboxes(per_frame_bboxes, num_frames)
 
-    # --- Phase 3: Compute union bounding box ---
+    # --- Phase 4: Compute union bounding box ---
     union_bbox, padded_bbox = compute_union_bbox(
         all_bboxes, frame_width, frame_height, bbox_padding_scale
     )
     px1, py1, px2, py2 = padded_bbox
 
-    # --- Phase 4: Crop and save frames ---
+    # --- Phase 5: Crop and save frames ---
     frames_dir.mkdir(parents=True, exist_ok=True)
     bbox_dir = save_path / 'mtcnn_bboxes'
     bbox_dir.mkdir(parents=True, exist_ok=True)
@@ -245,7 +254,6 @@ def process_single_video(
         out_path = frames_dir / f'{idx:04d}.png'
         cv2.imwrite(str(out_path), resized)
 
-    # Parallelize frame saving (I/O bound)
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as io_pool:
         futures = []
         for idx, frame in enumerate(raw_frames):
@@ -253,9 +261,9 @@ def process_single_video(
         for f in futures:
             f.result()
 
-    # --- Phase 5: Save metadata ---
+    # --- Phase 6: Save metadata ---
     per_frame_meta = {}
-    for idx in range(total_frames):
+    for idx in range(num_frames):
         info = all_bboxes[idx]
         per_frame_meta[f'{idx:04d}'] = {
             'bbox': [round(v, 2) for v in info['bbox']],
@@ -265,7 +273,9 @@ def process_single_video(
 
     metadata = {
         'video': video_stem,
-        'total_frames': total_frames,
+        'total_video_frames': total_video_frames,
+        'sampled_frames': num_frames,
+        'start_frame': start_frame,
         'frame_height': frame_height,
         'frame_width': frame_width,
         'union_bbox': [round(v, 2) for v in union_bbox],
@@ -282,7 +292,7 @@ def process_single_video(
 
 
 
-def preprocess_subdataset(sub_dataset_path, output_base_path, detector, output_resolution, bbox_padding_scale, logger):
+def preprocess_subdataset(sub_dataset_path, output_base_path, detector, output_resolution, bbox_padding_scale, num_frames, logger):
     """Process all videos in a single sub-dataset directory.
 
     Args:
@@ -309,6 +319,7 @@ def preprocess_subdataset(sub_dataset_path, output_base_path, detector, output_r
                 detector,
                 output_resolution,
                 bbox_padding_scale,
+                num_frames,
                 logger,
             )
         except Exception as e:
@@ -331,6 +342,7 @@ if __name__ == '__main__':
     device = cfg['device']['default']
     output_resolution = cfg['output_resolution']['default']
     bbox_padding_scale = cfg['bbox_padding_scale']['default']
+    num_frames = cfg['num_frames']['default']
 
     dataset_path = Path(os.path.join(dataset_root_path, dataset_name))
 
@@ -339,7 +351,7 @@ if __name__ == '__main__':
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
     logger = create_logger(log_path)
     logger.info(f"Starting MTCNN preprocessing for {dataset_name}")
-    logger.info(f"Config: device={device}, resolution={output_resolution}, padding={bbox_padding_scale}")
+    logger.info(f"Config: device={device}, resolution={output_resolution}, padding={bbox_padding_scale}, num_frames={num_frames}")
 
     # Initialize MTCNN detector (single instance, GPU)
     detector = MTCNN(
@@ -363,6 +375,9 @@ if __name__ == '__main__':
             "manipulated_sequences/DeepFakeDetection",
         ]
         sub_dataset_paths = [Path(os.path.join(dataset_path, name, comp)) for name in sub_dataset_names]
+    elif dataset_name in ('Celeb-DF-v1', 'Celeb-DF-v2'):
+        sub_dataset_names = ['Celeb-real', 'Celeb-synthesis', 'YouTube-real']
+        sub_dataset_paths = [Path(os.path.join(dataset_path, name)) for name in sub_dataset_names]
     else:
         logger.error(f"Dataset {dataset_name} not yet supported for MTCNN preprocessing")
         sys.exit(1)
@@ -382,7 +397,7 @@ if __name__ == '__main__':
     for sub_dataset_path in sub_dataset_paths:
         logger.info(f"Processing: {sub_dataset_path}")
         preprocess_subdataset(
-            sub_dataset_path, sub_dataset_path, detector, output_resolution, bbox_padding_scale, logger
+            sub_dataset_path, sub_dataset_path, detector, output_resolution, bbox_padding_scale, num_frames, logger
         )
 
     total_minutes = (time.monotonic() - total_start) / 60

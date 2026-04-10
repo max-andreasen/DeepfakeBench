@@ -1,0 +1,18 @@
+2026-04-09 15:38:21,323 - INFO - Starting MTCNN preprocessing for Celeb-DF-v2
+2026-04-09 15:38:21,323 - INFO - Config: device=cuda, resolution=256, padding=1.15, num_frames=96
+2026-04-09 15:38:21,576 - INFO - MTCNN detector initialized on cuda
+2026-04-09 15:38:21,576 - INFO - Processing: /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v2/Celeb-real
+2026-04-09 15:38:21,580 - INFO - 590 videos found in /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v2/Celeb-real
+2026-04-09 15:38:21,580 - INFO - Output directory: /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v2/Celeb-real
+2026-04-09 15:39:15,693 - WARNING - id10_0006.mp4: 11/96 frames missed (11.5%)
+2026-04-09 15:47:13,359 - ERROR - Video id27_0005.mp4 has only 1 frames (need 96)
+2026-04-09 16:18:00,928 - INFO - Sub-dataset /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v2/Celeb-real done in 39.66 minutes
+2026-04-09 16:18:00,928 - INFO - Processing: /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v2/Celeb-synthesis
+2026-04-09 16:18:00,973 - INFO - 5639 videos found in /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v2/Celeb-synthesis
+2026-04-09 16:18:00,973 - INFO - Output directory: /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v2/Celeb-synthesis
+2026-04-09 19:21:35,411 - INFO - Sub-dataset /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v2/Celeb-synthesis done in 183.57 minutes
+2026-04-09 19:21:35,422 - INFO - Processing: /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v2/YouTube-real
+2026-04-09 19:21:35,500 - INFO - 300 videos found in /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v2/YouTube-real
+2026-04-09 19:21:35,500 - INFO - Output directory: /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v2/YouTube-real
+2026-04-09 19:30:31,215 - INFO - Sub-dataset /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v2/YouTube-real done in 8.93 minutes
+2026-04-09 19:30:31,215 - INFO - All done! Total time: 232.16 minutes

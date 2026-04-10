@@ -1,0 +1,11 @@
+2026-04-09 09:06:29,114 - INFO - Starting MTCNN preprocessing for Celeb-DF-v1
+2026-04-09 09:06:29,115 - INFO - Config: device=cuda, resolution=256, padding=1.0, num_frames=96
+2026-04-09 09:06:29,438 - INFO - MTCNN detector initialized on cuda
+2026-04-09 09:06:29,439 - INFO - Processing: /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/Celeb-real
+2026-04-09 09:06:50,709 - INFO - 158 videos found in /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/Celeb-real
+2026-04-09 09:06:50,709 - INFO - Output directory: /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/Celeb-real
+2026-04-09 09:07:20,972 - WARNING - id10_0006.mp4: 11/96 frames missed (11.5%)
+2026-04-09 09:11:17,073 - INFO - Sub-dataset /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/Celeb-real done in 4.44 minutes
+2026-04-09 09:11:17,081 - INFO - Processing: /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/Celeb-synthesis
+2026-04-09 09:13:18,074 - INFO - 795 videos found in /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/Celeb-synthesis
+2026-04-09 09:13:18,074 - INFO - Output directory: /media/max-andreasen/Lagringsdisken/Storage/Datasets_deepfake/Celeb-DF-v1/Celeb-synthesis
