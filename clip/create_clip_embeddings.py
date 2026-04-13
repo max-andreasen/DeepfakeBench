@@ -1,11 +1,13 @@
+import os
 import json
+import glob
 import importlib.util
 from pathlib import Path
 
 import pandas as pd
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def _load_module_from_path(module_name: str, module_path: Path):
@@ -38,7 +40,7 @@ LABEL_MAP = {
 
 
 
-def build_df_from_repo_json(json_path: Path, dataset_name: str) -> pd.DataFrame:
+def build_df_from_repo_json(json_path: Path, dataset_name: str):
     """
     Reads a JSON file produced by rearrange.py and returns a DataFrame with columns:
         video_id, label, frame_paths (list of PNG paths), split, dataset
@@ -59,16 +61,31 @@ def build_df_from_repo_json(json_path: Path, dataset_name: str) -> pd.DataFrame:
             raise ValueError(
                 f"No label mapping for '{label_cat}'. Add it to LABEL_MAP in create_clip_embeddings.py."
             )
-        for split_name, videos in splits.items():
+        for split_name, videos_or_comp in splits.items():
+            # FF++ JSONs have an extra compression level: split → c23 → videos
+            # Detect by checking if the first value has "frames" or not
+            first_val = next(iter(videos_or_comp.values()), None)
+            if first_val is not None and isinstance(first_val, dict) and "frames" not in first_val and "video_path" not in first_val:
+                # Extra nesting (compression level) — flatten it
+                videos = {}
+                for _comp, comp_videos in videos_or_comp.items():
+                    videos.update(comp_videos)
+            else:
+                videos = videos_or_comp
+
             for video_id, video_info in videos.items():
-                frame_paths = sorted(video_info["frames"])
-                rows.append({
+                row = {
                     "dataset":     dataset_name,
                     "video_id":    video_id,
                     "label":       numeric_label,
-                    "frame_paths": frame_paths,
+                    "label_cat":   label_cat,
                     "split":       split_name,
-                })
+                }
+                if "frames" in video_info:
+                    row["frame_paths"] = sorted(video_info["frames"])
+                if "video_path" in video_info:
+                    row["video_path"] = video_info["video_path"]
+                rows.append(row)
 
     df = pd.DataFrame(rows)
     split_counts = df["split"].value_counts().to_dict()
@@ -77,18 +94,18 @@ def build_df_from_repo_json(json_path: Path, dataset_name: str) -> pd.DataFrame:
 
 
 
-def main() -> None:
+def main():
     # ---- manual run config ----
-    json_path    = REPO_ROOT / "datasets" / "Celeb-DF-v2.json"   # produced by rearrange.py
-    dataset_name = "Celeb-DF-v2"
+    json_path    = REPO_ROOT / "preprocessing" / "dataset_json_dlib" / "FaceForensics++.json"   # dlib preprocessed
+    dataset_name = "FaceForensics++"
     model_name   = "ViT-L-14-336-quickgelu"
     pretrained   = "openai"
     device       = "cuda"
-    T            = 32
-    micro_bs     = 32
+    T            = 96
+    micro_bs     = 16
     seed         = 0
-    out_dir      = None   # None → auto-create under my_project/clip/embeddings/
-    max_videos   = None   # set e.g. 100 for a quick smoke-test
+    base_dir     = REPO_ROOT / "clip" / "embeddings" / "dlib"
+    max_videos   = None
     # ---------------------------
 
     df = build_df_from_repo_json(json_path, dataset_name)
@@ -105,7 +122,7 @@ def main() -> None:
 
     failures = embedder.run(
         input_frame=df,
-        out_dir=out_dir,
+        base_dir=base_dir,
         max_videos=max_videos,
     )
 

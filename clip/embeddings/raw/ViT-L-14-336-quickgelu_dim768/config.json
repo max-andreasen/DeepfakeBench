@@ -1,0 +1,10 @@
+{
+  "created_utc": "2026-04-13T09:13:58.557546+00:00",
+  "model_name": "ViT-L-14-336-quickgelu",
+  "pretrained": "openai",
+  "T": 96,
+  "embedding_dim": 768,
+  "device": "cuda",
+  "align_faces": false,
+  "face_scale": null
+}

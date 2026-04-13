@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import os
 import sys
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List
+from typing import List, Optional, Union
 from tqdm import tqdm
 import time
 
@@ -96,31 +98,16 @@ class CLIP_EMBEDDER():
     
 
 
-    def _create_output_dir(self, base_dir: str | Path = "clip/embeddings") -> Path:
+    def _get_model_dir(self, base_dir: str | Path = "embeddings") -> Path:
         """
-        Creates a unique run directory under clip/embeddings and returns the files/ directory path.
-        Example: clip/embeddings/celeb_df_ViT-L-14-336-quickgelu_dim768_T32_0/files
+        Returns the model-level output directory.
+        Example: embeddings/ViT-L-14-336-quickgelu/
         """
-        if not self.dataset_name:
-            raise ValueError("dataset_name is not set. Call run(...) with a dataframe containing a 'dataset' column.")
-
-        base_dir_path = Path(base_dir)
-        base_dir_path.mkdir(parents=True, exist_ok=True)
-
-        safe_dataset = str(self.dataset_name).replace("/", "_").replace("\\", "_").replace(" ", "_")
         safe_model = str(self.model_name).replace("/", "_").replace("\\", "_").replace(" ", "_")
         dim = self.embedding_dim if self.embedding_dim is not None else "unknown"
-
-        inc = 0
-        while True:
-            align_tag = "_aligned" if self.align_faces else ""
-            run_name = f"{safe_dataset}_{safe_model}_dim{dim}_T{self.T}{align_tag}_{inc}"
-            run_dir = base_dir_path / run_name
-            files_dir = run_dir / "files"
-            if not run_dir.exists():
-                files_dir.mkdir(parents=True, exist_ok=False)
-                return files_dir
-            inc += 1
+        model_dir = Path(base_dir) / f"{safe_model}_dim{dim}"
+        model_dir.mkdir(parents=True, exist_ok=True)
+        return model_dir
 
 
 
@@ -164,6 +151,39 @@ class CLIP_EMBEDDER():
         return frames, indices
 
 
+    def _load_frames_from_video(self, video_path: str):
+        """
+        Loads T consecutive frames directly from a video file (.mp4).
+        Randomly samples a contiguous window of T frames.
+        Returns (frames, indices) or False if the video has fewer than T frames.
+        """
+        cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            raise RuntimeError(f"Failed to open video: {video_path}")
+
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        if total_frames < self.T:
+            cap.release()
+            return False
+
+        start = int(self.rng.integers(0, total_frames - self.T + 1))
+        cap.set(cv2.CAP_PROP_POS_FRAMES, start)
+
+        frames = []
+        for _ in range(self.T):
+            ret, frame = cap.read()
+            if not ret:
+                break
+            frames.append(Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)))
+        cap.release()
+
+        if len(frames) < self.T:
+            return False
+
+        indices = list(range(start, start + self.T))
+        return frames, indices
+
+
     
     def _align_frames(self, frames):
         """
@@ -177,48 +197,74 @@ class CLIP_EMBEDDER():
 
 
 
-    def _run_embedding_loop(self, max_videos, df, out_dir: str | None = None):
+    def _run_embedding_loop(self, max_videos, df, model_dir: Path):
         """
-        Loops over videos in created dataframe for each dataset, extracts T frames, embeds them. 
-        Also returns results in-memory.
+        Loops over videos in created dataframe for each dataset, extracts T frames, embeds them.
 
-        Dataframe must contain columns: video_id, label, frame_paths (list of PNG paths), split.
-        Returns: list of dicts with video_id, label, indices, embedding (torch.FloatTensor [T, D])
+        Saves embeddings to: model_dir/{dataset}/{label_cat}/{video_id}.npz
+        Dataframe must contain columns: video_id, label, label_cat, frame_paths (list of PNG paths), split.
         """
-        required = {"video_id", "label", "frame_paths"}
+        required = {"video_id", "label", "label_cat"}
         missing = required - set(df.columns)
         if missing:
             raise ValueError(f"df missing columns: {missing}")
-        
-        failures = []       # keeps track of failures / discarded videos.
-        catalogue_rows = [] 
-        observed_labels = set()     # keeps track of all labels (should just be binary)
+        if "frame_paths" not in df.columns and "video_path" not in df.columns:
+            raise ValueError("df must have either 'frame_paths' or 'video_path' column")
+
+        failures = []
+        catalogue_rows = []
+        observed_labels = set()
         video_embed_times = []
+        skipped_existing = 0
 
         N = len(df) if max_videos is None else min(len(df), max_videos)
-
-        if out_dir is None:
-            out_dir = str(self._create_output_dir().as_posix())
-        out_dir_path = Path(out_dir) 
 
         # Loops through each row in the dataframe (df)
         for j, row in enumerate(
             tqdm(df.itertuples(index=False), total=N, desc="Embedding dataset", unit="video"),
             start=1,
         ):
-            t0 = time.perf_counter() # for timing purposes
+            t0 = time.perf_counter()
             if max_videos is not None and j > max_videos:
                 break
 
             video_id = row.video_id
-            frame_paths = list(row.frame_paths)
+            frame_paths = getattr(row, "frame_paths", None)
+            video_path = getattr(row, "video_path", None)
             label = int(row.label)
+            label_cat = row.label_cat
             split = getattr(row, "split", None)
 
+            # Build output path: model_dir/dataset/label_cat/video_id.npz
+            clean_video_id = video_id.replace("/", "__").replace("\\", "__")
+            video_out_dir = model_dir / self.dataset_name / label_cat
+            out_file = video_out_dir / f"{clean_video_id}.npz"
+
+            # Skip if already embedded
+            if out_file.exists():
+                skipped_existing += 1
+                continue
+
+            # Determine source path for error messages
+            source_path = ""
+            if frame_paths is not None:
+                frame_paths = list(frame_paths)
+                source_path = str(Path(frame_paths[0]).parent) if frame_paths else ""
+            elif video_path is not None:
+                source_path = str(video_path)
+
             try:
-                frame_result = self._load_frames(frame_paths)
+                # Load frames from pre-extracted PNGs or directly from video
+                if frame_paths is not None:
+                    frame_result = self._load_frames(frame_paths)
+                elif video_path is not None:
+                    frame_result = self._load_frames_from_video(str(video_path))
+                else:
+                    failures.append((video_id, "", "No frame_paths or video_path provided"))
+                    continue
+
                 if frame_result is False:
-                    failures.append((video_id, str(Path(frame_paths[0]).parent), f"Too few frames (<{self.T})"))
+                    failures.append((video_id, source_path, f"Too few frames (<{self.T})"))
                     continue
                 frames, indices = frame_result
 
@@ -226,7 +272,7 @@ class CLIP_EMBEDDER():
                     frames = self._align_frames(frames)
 
                 if frames is None:
-                    failures.append((video_id, str(Path(frame_paths[0]).parent), "No face detected during alignment"))
+                    failures.append((video_id, source_path, "No face detected during alignment"))
                     continue
 
                 # micro-batch embedding
@@ -243,9 +289,7 @@ class CLIP_EMBEDDER():
                 if len(indices) != self.T:
                     raise RuntimeError(f"Bad indices length {len(indices)} expected {self.T}")
 
-                # Savind embeddings to file 
-                clean_video_id = video_id.replace("/", "__").replace("\\", "__") # sanitising video id for storage
-                status = self._save_embedding_to_file(embedding, out_dir, clean_video_id)
+                self._save_embedding_to_file(embedding, video_out_dir, clean_video_id)
 
                 label_name = "real" if label == 1 else ("fake" if label == 0 else "unknown")
                 catalogue_rows.append(
@@ -253,9 +297,9 @@ class CLIP_EMBEDDER():
                         "video_id": video_id,
                         "label": label,
                         "label_name": label_name,
-                        "video_dir": str(Path(frame_paths[0]).parent),
+                        "label_cat": label_cat,
                         "split": split,
-                        "embedding_file": str((out_dir_path / f"{clean_video_id}.npz").as_posix()),
+                        "embedding_file": str(out_file.as_posix()),
                         "n_frames": int(self.T),
                         "embedding_dim": int(embedding.shape[1]),
                     }
@@ -266,52 +310,47 @@ class CLIP_EMBEDDER():
                 video_embed_times.append(elapsed)
 
             except Exception as e:
-                failures.append((video_id, str(Path(frame_paths[0]).parent) if frame_paths else "", str(e)))
+                failures.append((video_id, source_path, str(e)))
 
-        # Outside of loop -->
-        metadata_dir = out_dir_path.parent if out_dir_path.name == "files" else out_dir_path
-        metadata_dir.mkdir(parents=True, exist_ok=True)
+        # --- Save catalogue and config at model level ---
+        catalogue_path = model_dir / "catalogue.csv"
+        config_path = model_dir / "config.json"
 
-        catalogue_path = metadata_dir / "catalogue.csv"
-        config_path = metadata_dir / "run_config.json"
+        # Append to existing catalogue if present
+        new_df = pd.DataFrame(catalogue_rows)
+        if catalogue_path.exists():
+            existing_df = pd.read_csv(catalogue_path)
+            catalogue_df = pd.concat([existing_df, new_df], ignore_index=True)
+            catalogue_df = catalogue_df.drop_duplicates(subset="video_id", keep="last")
+        else:
+            catalogue_df = new_df
 
-        catalogue_df = pd.DataFrame(catalogue_rows)
         if not catalogue_df.empty:
             catalogue_df = catalogue_df.sort_values("video_id").reset_index(drop=True)
-        else:
-            catalogue_df = pd.DataFrame(
-                columns=["video_id", "label", "label_name", "video_dir", "split", "embedding_file", "n_frames", "embedding_dim"]
-            )
-        
-        # Safe writing of catalogue file (using tmp).
+
         catalogue_tmp = catalogue_path.with_suffix(".tmp.csv")
         catalogue_df.to_csv(catalogue_tmp, index=False)
         os.replace(catalogue_tmp, catalogue_path)
 
-        if not video_embed_times:
+        if not video_embed_times and skipped_existing > 0:
+            print(f"All {skipped_existing} videos already embedded — nothing to do.")
+        elif not video_embed_times:
             print(f"WARNING: 0 videos embedded successfully out of {N}. "
                   "Check the failures list — all videos may have raised exceptions.")
+        elif skipped_existing > 0:
+            print(f"Embedded {len(video_embed_times)} new videos, skipped {skipped_existing} already existing.")
         avg_video_emb_time = sum(video_embed_times) / len(video_embed_times) if video_embed_times else 0.0
 
         run_config = {
             "created_utc": datetime.now(timezone.utc).isoformat(),
-            "dataset": self.dataset_name,
             "model_name": self.model_name,
-            "avg_video_emb_time": avg_video_emb_time,
-            "n_requested_videos": N,
-            "n_saved_embeddings": len(catalogue_rows),
-            "n_failures": len(failures),
-            "out_dir": str(out_dir_path.as_posix()),
-            "catalogue_file": str(catalogue_path.as_posix()),
-            "observed_labels": sorted([int(x) for x in observed_labels]),
+            "pretrained": self.pretrained,
             "T": self.T,
-            "micro_batch_size": self.micro_bs, # does not really matter though.
-            "device": self.device,
             "embedding_dim": self.embedding_dim,
+            "device": self.device,
             "align_faces": self.align_faces,
             "face_scale": self.face_scale if self.align_faces else None,
         }
-        # Safe writing of config file (using tmp).
         config_tmp = config_path.with_suffix(".tmp.json")
         with open(config_tmp, "w", encoding="utf-8") as f:
             json.dump(run_config, f, indent=2)
@@ -321,20 +360,18 @@ class CLIP_EMBEDDER():
 
 
     
-    def run(self, max_videos, input_frame: pd.DataFrame, out_dir: str | None = None):
+    def run(self, max_videos, input_frame: pd.DataFrame, base_dir: str | Path = "embeddings"):
         """
-        Sets the embedding process in motion. Automatically embeds the videos, stores them
-        in .npz format along with a config.json and manifest.csv file outlining the 
-        data structure. 
+        Sets the embedding process in motion. Embeds videos and stores them as .npz files
+        organized by model/dataset/sub_dataset/.
 
-        Args: 
-            input_frame: A pandas DF containing the a structured layout specified by ...
-            out_dir: Where the outputted videos should be stored. Default is clip/embeddings/
-            max_videos: set to None by default. Specifies a max amount of videos being inputted. 
-        Return: 
-            Returns a status message if the embedding and writing process was successful or not.
+        Args:
+            input_frame: DataFrame with columns: video_id, label, label_cat, frame_paths, split, dataset
+            base_dir: Root embeddings directory (default: embeddings/)
+            max_videos: Max videos to process (None = all)
+        Returns:
+            List of (video_id, path, error) failure tuples.
         """
-        # TODO: Set self.dataset_name
         if "dataset" not in input_frame.columns:
             raise ValueError("Missing required column: dataset")
         datasets = input_frame["dataset"].dropna().unique()
@@ -342,5 +379,6 @@ class CLIP_EMBEDDER():
             raise ValueError(f"Expected exactly one dataset in a run, got: {datasets.tolist()}")
         self.dataset_name = str(datasets[0])
 
-        failures = self._run_embedding_loop(df=input_frame, out_dir=out_dir, max_videos=max_videos)
+        model_dir = self._get_model_dir(base_dir)
+        failures = self._run_embedding_loop(df=input_frame, model_dir=model_dir, max_videos=max_videos)
         return failures
