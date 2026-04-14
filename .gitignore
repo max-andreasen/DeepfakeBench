@@ -9,4 +9,5 @@
 *.npz
 /datasets
 preprocessing/dataset_json_mtcnn/
+preprocessing/dataset_json_dlib/
 CLAUDE.md

@@ -202,7 +202,7 @@ class CLIP_EMBEDDER():
         Loops over videos in created dataframe for each dataset, extracts T frames, embeds them.
 
         Saves embeddings to: model_dir/{dataset}/{label_cat}/{video_id}.npz
-        Dataframe must contain columns: video_id, label, label_cat, frame_paths (list of PNG paths), split.
+        Dataframe must contain columns: video_id, label, label_cat, frame_paths (list of PNG paths).
         """
         required = {"video_id", "label", "label_cat"}
         missing = required - set(df.columns)
@@ -233,7 +233,6 @@ class CLIP_EMBEDDER():
             video_path = getattr(row, "video_path", None)
             label = int(row.label)
             label_cat = row.label_cat
-            split = getattr(row, "split", None)
 
             # Build output path: model_dir/dataset/label_cat/video_id.npz
             clean_video_id = video_id.replace("/", "__").replace("\\", "__")
@@ -294,11 +293,11 @@ class CLIP_EMBEDDER():
                 label_name = "real" if label == 1 else ("fake" if label == 0 else "unknown")
                 catalogue_rows.append(
                     {
+                        "dataset": self.dataset_name,
                         "video_id": video_id,
                         "label": label,
                         "label_name": label_name,
                         "label_cat": label_cat,
-                        "split": split,
                         "embedding_file": str(out_file.as_posix()),
                         "n_frames": int(self.T),
                         "embedding_dim": int(embedding.shape[1]),
@@ -366,7 +365,7 @@ class CLIP_EMBEDDER():
         organized by model/dataset/sub_dataset/.
 
         Args:
-            input_frame: DataFrame with columns: video_id, label, label_cat, frame_paths, split, dataset
+            input_frame: DataFrame with columns: video_id, label, label_cat, frame_paths, dataset
             base_dir: Root embeddings directory (default: embeddings/)
             max_videos: Max videos to process (None = all)
         Returns:

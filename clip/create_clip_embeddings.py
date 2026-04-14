@@ -43,10 +43,10 @@ LABEL_MAP = {
 def build_df_from_repo_json(json_path: Path, dataset_name: str):
     """
     Reads a JSON file produced by rearrange.py and returns a DataFrame with columns:
-        video_id, label, frame_paths (list of PNG paths), split, dataset
+        video_id, label, label_cat, frame_paths (list of PNG paths), dataset
 
-    The split column uses the repo's own train/val/test assignments, so data_split.py
-    is no longer needed.
+    Splits are no longer tracked here — they live in datasets/splits/*.csv instead,
+    so the same embedding run can be paired with any split definition.
     """
     with open(json_path, "r") as f:
         data = json.load(f)
@@ -61,12 +61,10 @@ def build_df_from_repo_json(json_path: Path, dataset_name: str):
             raise ValueError(
                 f"No label mapping for '{label_cat}'. Add it to LABEL_MAP in create_clip_embeddings.py."
             )
-        for split_name, videos_or_comp in splits.items():
+        for videos_or_comp in splits.values():
             # FF++ JSONs have an extra compression level: split → c23 → videos
-            # Detect by checking if the first value has "frames" or not
             first_val = next(iter(videos_or_comp.values()), None)
             if first_val is not None and isinstance(first_val, dict) and "frames" not in first_val and "video_path" not in first_val:
-                # Extra nesting (compression level) — flatten it
                 videos = {}
                 for _comp, comp_videos in videos_or_comp.items():
                     videos.update(comp_videos)
@@ -79,7 +77,6 @@ def build_df_from_repo_json(json_path: Path, dataset_name: str):
                     "video_id":    video_id,
                     "label":       numeric_label,
                     "label_cat":   label_cat,
-                    "split":       split_name,
                 }
                 if "frames" in video_info:
                     row["frame_paths"] = sorted(video_info["frames"])
@@ -87,9 +84,9 @@ def build_df_from_repo_json(json_path: Path, dataset_name: str):
                     row["video_path"] = video_info["video_path"]
                 rows.append(row)
 
-    df = pd.DataFrame(rows)
-    split_counts = df["split"].value_counts().to_dict()
-    print(f"Built DataFrame: {len(df)} videos — {split_counts}")
+    # Same video may appear in multiple splits in the source JSON; keep one row per video.
+    df = pd.DataFrame(rows).drop_duplicates(subset=["dataset", "label_cat", "video_id"])
+    print(f"Built DataFrame: {len(df)} videos")
     return df
 
 
