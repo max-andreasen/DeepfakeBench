@@ -44,11 +44,10 @@ def init_seed(seed):
 
 # split = 'train' or 'val'
 def prepare_data(config, split):
-    prefix = 'train' if split == 'train' else 'val'
     root = config.get('root_dir', '')
     dataset = DeepfakeDataset(
-        split_file=os.path.join(root, config[f'{prefix}_split_file']),
-        catalogue_file=os.path.join(root, config[f'{prefix}_catalogue_file']),
+        split_file=os.path.join(root, config['split_file']),
+        catalogue_file=os.path.join(root, config['catalogue_file']),
         split=split,
         num_frames=config['num_frames'][split],
     )

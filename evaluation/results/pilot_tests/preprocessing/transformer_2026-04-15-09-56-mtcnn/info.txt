@@ -1,0 +1,2 @@
+LR=..05, epochs=75, adamw
+MTCNN.

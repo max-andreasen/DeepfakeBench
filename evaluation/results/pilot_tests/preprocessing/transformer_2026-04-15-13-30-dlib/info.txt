@@ -1,0 +1,2 @@
+LR=..02, epochs=75, ADAM.
+DLIB.

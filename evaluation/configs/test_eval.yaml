@@ -1,0 +1,18 @@
+# Output dir.
+output_dir: results/max
+trained_model_dir: training/trained/pilot_test/optimiser_scheduler/transformer_2026-04-15-15-13-adamw_coswarm
+
+# Catalogue CSV (dataset, label_cat, video_id, label, embedding_file, ...) — points at .npz embeddings.
+root_dir: "/home/max-andreasen/GitHub/DeepfakeBench"
+split_file: "datasets/splits/FaceForensics++.csv"
+catalogue_file: "clip/embeddings/mtcnn/ViT-L-14-336-quickgelu_dim768/catalogue.csv"
+test_dataset: FaceForensics++
+
+batch_size: 96 # window-level batch size (see evaluation/data_loader.py)
+num_frames: 32 # T, MUST MATCH what the model was trained on
+window_aggregation: max # 'mean', 'max' or 'softmax'
+shuffle_frames: false # temporal ablation; CLI --shuffle_frames overrides this
+
+device: cuda
+seed: 1024 # seeds the shuffled pass so the ablation is reproducible
+workers: 4

@@ -1,0 +1,2 @@
+LR = ..05, Epochs=75, ADAMW
+DLIB.

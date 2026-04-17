@@ -85,10 +85,8 @@ class Trainer:
             'data_aug': cfg.get('data_aug') if cfg.get('use_data_augmentation') else None,
             'data': {
                 'root_dir': cfg.get('root_dir', ''),
-                'train_split_file': cfg.get('train_split_file'),
-                'train_catalogue_file': cfg.get('train_catalogue_file'),
-                'val_split_file': cfg.get('val_split_file'),
-                'val_catalogue_file': cfg.get('val_catalogue_file'),
+                'split_file': cfg.get('split_file'),
+                'catalogue_file': cfg.get('catalogue_file'),
                 'train_dataset': cfg.get('train_dataset'),
                 'val_dataset': cfg.get('val_dataset'),
                 'compression': cfg.get('compression'),

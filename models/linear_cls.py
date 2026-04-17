@@ -1,21 +1,15 @@
-
 import torch
 import torch.nn as nn
 
 """
-AI generated code for quick set up of baseline. Not strictly part of study.
 A simple linear classifier that operates on CLIP frame embeddings.
 
-This is the baseline model, no temporal reasoning, just averages all frame
-embeddings into a single video-level vector and runs it through a linear layer.
-
-It's a useful sanity check: if the transformer doesn't beat this,
-something is wrong with the temporal modeling.
+This is the baseline model, just averages all frame embeddings
+into a single video-level vector and runs it through a linear layer.
 
 Input shape: (Batch, num_frames, embed_dim)
 Output shape: (Batch, num_classes)
 """
-
 
 class LinearClassifier(nn.Module):
     def __init__(self, clip_embed_dim=768, num_classes=2):
