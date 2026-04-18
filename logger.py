@@ -3,6 +3,13 @@ import logging
 
 def create_logger(log_file):
     logger = logging.getLogger("deepfakebench")
+    # Clear handlers from prior calls. Otherwise every create_logger() call
+    # under an Optuna sweep (100s of trials) keeps stacking file + stream
+    # handlers on the same shared-name logger, which leaks FDs and duplicates
+    # every log line N times.
+    for h in list(logger.handlers):
+        logger.removeHandler(h)
+        h.close()
     logger.setLevel(logging.INFO)
 
     # file handler

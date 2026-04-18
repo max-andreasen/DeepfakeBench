@@ -1,0 +1,89 @@
+{
+  "evaluated_utc": "2026-04-17T13:30:31.738058+00:00",
+  "trained_model_dir": "training/trained/pilot_test/preprocessing/bigru_2026-04-17-15-19_mtcnn",
+  "split_file": "datasets/splits/FaceForensics++.csv",
+  "catalogue_file": "clip/embeddings/mtcnn/ViT-L-14-336-quickgelu_dim768/catalogue.csv",
+  "test_dataset": "FaceForensics++",
+  "num_frames": 32,
+  "window_aggregation": "mean",
+  "softmax_temp": null,
+  "seed": 1024,
+  "standard": {
+    "per_window": {
+      "accuracy": 0.8319047619047619,
+      "auc": 0.8779804421768707,
+      "precision": 0.5811138014527845,
+      "recall": 0.5714285714285714,
+      "f1": 0.5762304921968787,
+      "confusion": {
+        "tp": 240,
+        "tn": 1507,
+        "fp": 173,
+        "fn": 180
+      },
+      "best_thresh": 0.12648159265518188,
+      "acc_at_best_thresh": 0.7628571428571429,
+      "num_samples": 2100,
+      "loss": 0.3399328337982297
+    },
+    "per_video": {
+      "accuracy": 0.8428571428571429,
+      "auc": 0.8829464285714286,
+      "precision": 0.6119402985074627,
+      "recall": 0.5857142857142857,
+      "f1": 0.5985401459854015,
+      "confusion": {
+        "tp": 82,
+        "tn": 508,
+        "fp": 52,
+        "fn": 58
+      },
+      "best_thresh": 0.23055000603199005,
+      "acc_at_best_thresh": 0.8042857142857143,
+      "num_samples": 700
+    },
+    "num_windows": 2100,
+    "num_videos": 700,
+    "aggregation": "mean",
+    "shuffle_frames": false
+  },
+  "shuffled": {
+    "per_window": {
+      "accuracy": 0.8304761904761905,
+      "auc": 0.8781306689342404,
+      "precision": 0.5765550239234449,
+      "recall": 0.5738095238095238,
+      "f1": 0.5751789976133651,
+      "confusion": {
+        "tp": 241,
+        "tn": 1503,
+        "fp": 177,
+        "fn": 179
+      },
+      "best_thresh": 0.12880973517894745,
+      "acc_at_best_thresh": 0.7628571428571429,
+      "num_samples": 2100,
+      "loss": 0.3396348711103201
+    },
+    "per_video": {
+      "accuracy": 0.8457142857142858,
+      "auc": 0.8832270408163265,
+      "precision": 0.6176470588235294,
+      "recall": 0.6,
+      "f1": 0.6086956521739131,
+      "confusion": {
+        "tp": 84,
+        "tn": 508,
+        "fp": 52,
+        "fn": 56
+      },
+      "best_thresh": 0.1886070817708969,
+      "acc_at_best_thresh": 0.7885714285714286,
+      "num_samples": 700
+    },
+    "num_windows": 2100,
+    "num_videos": 700,
+    "aggregation": "mean",
+    "shuffle_frames": true
+  }
+}

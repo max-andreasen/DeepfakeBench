@@ -1,0 +1,15 @@
+{
+  "output_dir": "results/mean",
+  "trained_model_dir": "training/trained/pilot_test/optimiser_scheduler/transformer_2026-04-15-14-51-adamw_cos",
+  "root_dir": "/home/max-andreasen/GitHub/DeepfakeBench",
+  "split_file": "datasets/splits/FaceForensics++.csv",
+  "catalogue_file": "clip/embeddings/mtcnn/ViT-L-14-336-quickgelu_dim768/catalogue.csv",
+  "test_dataset": "FaceForensics++",
+  "batch_size": 96,
+  "num_frames": 32,
+  "window_aggregation": "mean",
+  "shuffle_frames": false,
+  "device": "cuda",
+  "seed": 1024,
+  "workers": 4
+}

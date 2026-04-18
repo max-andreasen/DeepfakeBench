@@ -62,7 +62,54 @@ class Transformer(nn.Module):
         # TODO: Is num_classes needed? Should always be 2, can't think of a scenario where it is more than 2.
         # TODO: Might re-name num_frames to e.g. T, to be consistent throughout the code-base.
 
-        self.d_model = clip_embed_dim
+        # --- Input projection (Pilot 2) ---
+        # Swap between options by (un)commenting the block you want. Only one
+        # active at a time. `proj_out_dim` drives `self.d_model` below, so
+        # cls_token / positional_encoding / encoder_layer / classifier all
+        # follow automatically. For reduced d_model (C/D = 512, E = 256),
+        # remember `n_heads` must divide d_model (8 works for both 512 and 256;
+        # 16 works for 512 but not 256) and `dim_feedforward` should scale
+        # roughly 4× d_model (so ~2048 for 512, ~1024 for 256).
+
+        # Option A — no projection (CLIP embeddings go straight in).
+
+        """
+        self.input_proj = nn.Identity()
+        proj_out_dim = clip_embed_dim
+
+
+        # Option C — Linear + LN, reduce to 512. Mild dim reduction + LN
+        # normalises input stats before the first encoder block.
+        proj_out_dim = 512
+        self.input_proj = nn.Sequential(
+             nn.Linear(clip_embed_dim, proj_out_dim),
+             nn.LayerNorm(proj_out_dim),
+        )
+        """
+
+        # Option D — 2-layer MLP + LN, reduce to 512. Same target dim as C;
+        # isolates the effect of nonlinearity at matched capacity.
+        #
+        """
+        proj_out_dim = 512
+        self.input_proj = nn.Sequential(
+            nn.Linear(clip_embed_dim, proj_out_dim),
+            nn.GELU(),
+            nn.Dropout(0.1),
+            nn.Linear(proj_out_dim, proj_out_dim),
+            nn.LayerNorm(proj_out_dim),
+        )
+        """
+
+        # Option E — Linear + LN with dim reduction to 256 (KDD paper).
+        # Stronger regularisation via aggressive dim reduction.
+        proj_out_dim = 256
+        self.input_proj = nn.Sequential(
+            nn.Linear(clip_embed_dim, proj_out_dim),
+            nn.LayerNorm(proj_out_dim),
+        )
+
+        self.d_model = proj_out_dim
 
         self.n_heads = n_heads
         self.dim_feedforward = dim_feedforward
@@ -98,7 +145,7 @@ class Transformer(nn.Module):
         # Per-layer dropout for the 4 hidden blocks of the MLP head.
         # Static mode: same mlp_dropout on every layer (standard practice; e.g. KDD paper uses 0.515).
         # Decay mode:  linear ramp mlp_dropout -> 0 across layers (heuristic, not a standard convention).
-        n_drops = 4
+        n_drops = 2
         if mlp_dropout_decay:
             mlp_drops = [round(mlp_dropout * (1 - i / n_drops), 3) for i in range(n_drops)]
         else:
@@ -106,30 +153,22 @@ class Transformer(nn.Module):
 
         # MLP Classification Head
         self.classifier = nn.Sequential(
-            nn.Linear(self.d_model, 512),
-            nn.ELU(),
-            nn.Dropout(mlp_drops[0]),
-
-            nn.Linear(512, 256),
-            nn.ELU(),
-            nn.Dropout(mlp_drops[1]),
-
-            nn.Linear(256, 128),
-            nn.ELU(),
-            nn.Dropout(mlp_drops[2]),
-
-            nn.Linear(128, 64),
-            nn.ELU(),
-            nn.Dropout(mlp_drops[3]),
-
-            nn.Linear(64, num_classes) # num_classes is real/fake = 2.
+            nn.Linear(self.d_model, 384),   # or 512
+            nn.GELU(),
+            nn.Dropout(0.4),
+            nn.Linear(384, num_classes),
         )
+
+        # self.classifier = nn.Linear(self.d_model, num_classes)
 
 
     # Forward pass --> returning logits for classification.
     def forward(self, x):
-        # x: (B, T, D)   — T CLIP frame embeddings per video
+        # x: (B, T, clip_embed_dim)   — T CLIP frame embeddings per video
         batch_size = x.size(0)
+
+        # Input projection (identity by default). Maps clip_embed_dim -> d_model.
+        x = self.input_proj(x)   # (B, T, d_model)
 
         # Broadcast the single CLS token across the batch: (1, 1, D) -> (B, 1, D).
         # .expand doesn't copy memory — same parameter, viewed for each batch item.

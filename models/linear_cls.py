@@ -16,7 +16,28 @@ class LinearClassifier(nn.Module):
         super().__init__()
 
         # just a single linear layer from embedding dim → num_classes
-        self.classifier = nn.Linear(clip_embed_dim, num_classes)
+        # self.classifier = nn.Linear(clip_embed_dim, num_classes)
+        #
+        # Linear stack shows better performance
+        self.classifier = nn.Sequential(
+            nn.Linear(clip_embed_dim, 512),
+            nn.GELU(),
+            nn.Dropout(0.4),
+
+            nn.Linear(512, 256),
+            nn.GELU(),
+            nn.Dropout(0.4),
+
+            nn.Linear(256, 128),
+            nn.GELU(),
+            nn.Dropout(0.4),
+
+            nn.Linear(128, 64),
+            nn.GELU(),
+            nn.Dropout(0.4),
+
+            nn.Linear(64, num_classes) # num_classes is real/fake = 2.
+        )
 
     def forward(self, x):
         # x: (B, T, D)

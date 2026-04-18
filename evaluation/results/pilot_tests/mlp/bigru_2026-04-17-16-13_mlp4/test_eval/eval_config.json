@@ -1,0 +1,15 @@
+{
+  "output_dir": "results/pilot_tests/mlp",
+  "trained_model_dir": "training/trained/mlp/bigru_2026-04-17-16-13_mlp4",
+  "root_dir": "/home/max-andreasen/GitHub/DeepfakeBench",
+  "split_file": "datasets/splits/FaceForensics++.csv",
+  "catalogue_file": "clip/embeddings/mtcnn/ViT-L-14-336-quickgelu_dim768/catalogue.csv",
+  "test_dataset": "FaceForensics++",
+  "batch_size": 96,
+  "num_frames": 32,
+  "window_aggregation": "mean",
+  "shuffle_frames": false,
+  "device": "cuda",
+  "seed": 1024,
+  "workers": 4
+}

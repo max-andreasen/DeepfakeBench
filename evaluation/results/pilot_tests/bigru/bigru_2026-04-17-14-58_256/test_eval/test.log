@@ -1,0 +1,14 @@
+2026-04-17 15:04:48,103 - INFO - CLI args: {'config': 'configs/test_eval.yaml', 'run_tag': 'test_eval', 'shuffle_frames': None}
+2026-04-17 15:04:48,103 - INFO - Resolved config: {'output_dir': 'results/pilot_tests/bigru', 'trained_model_dir': 'training/trained/pilot_test/bigru_2026-04-17-14-58_256', 'root_dir': '/home/max-andreasen/GitHub/DeepfakeBench', 'split_file': 'datasets/splits/FaceForensics++.csv', 'catalogue_file': 'clip/embeddings/mtcnn/ViT-L-14-336-quickgelu_dim768/catalogue.csv', 'test_dataset': 'FaceForensics++', 'batch_size': 96, 'num_frames': 32, 'window_aggregation': 'mean', 'shuffle_frames': False, 'device': 'cuda', 'seed': 1024, 'workers': 4}
+2026-04-17 15:04:48,103 - INFO - Output dir: results/pilot_tests/bigru/bigru_2026-04-17-14-58_256/test_eval
+2026-04-17 15:04:48,131 - INFO - Loaded model_type=bigru kwargs={'clip_embed_dim': 768, 'hidden_dim': 256, 'num_layers': 2, 'gru_dropout': 0.2, 'mlp_dropout': 0.5, 'num_classes': 2}
+2026-04-17 15:04:48,131 - INFO - Trained on: ['FaceForensics++']
+2026-04-17 15:04:48,131 - INFO - Parameters: 2,604,354
+2026-04-17 15:04:48,152 - INFO - Total batches: 8  (test videos: 700)
+2026-04-17 15:04:48,388 - INFO - Evaluating (standard)...
+2026-04-17 15:04:49,031 - INFO -   per-window: acc=0.8205  auc=0.8596  loss=0.3367
+2026-04-17 15:04:49,031 - INFO -   per-video : acc=0.8229  auc=0.8657  acc@best=0.7914 (thr=0.257)
+2026-04-17 15:04:49,031 - INFO - Evaluating (shuffled)...
+2026-04-17 15:04:49,601 - INFO -   per-window: acc=0.8219  auc=0.8600  loss=0.3364
+2026-04-17 15:04:49,601 - INFO -   per-video : acc=0.8243  auc=0.8664  acc@best=0.7986 (thr=0.270)
+2026-04-17 15:04:49,602 - INFO - Wrote results.json and eval_config.json to results/pilot_tests/bigru/bigru_2026-04-17-14-58_256/test_eval

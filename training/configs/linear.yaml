@@ -34,7 +34,7 @@ split_file: "datasets/splits/FaceForensics++.csv"
 catalogue_file: "clip/embeddings/mtcnn/ViT-L-14-336-quickgelu_dim768/catalogue.csv"
 
 compression: c23 # compression-level for videos
-batchSize: { "train": 64, "val": 64 }
+batchSize: { "train": 96, "val": 64 }
 workers: 4 # number of data loading workers
 num_frames: { "train": 32, "val": 32 } # number of frames to use per video in training and testing
 resolution: 256 # resolution of output image to network

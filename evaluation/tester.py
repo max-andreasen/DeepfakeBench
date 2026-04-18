@@ -42,16 +42,17 @@ class Tester:
     @torch.no_grad()
     def _forward_all(self, dataloader, shuffle_frames):
         """Forward passes over the entire dataloader.
-        Returns (logits, labels, video_ids, total_loss, n_batches).
+        Returns (logits, labels, video_keys, total_loss).
+        video_keys is a list of (label_cat, video_id) tuples, one per window.
         Optionally shuffles the temporal axis independently per window.
         """
 
         all_logits = []
         all_labels = []
-        all_video_ids = []
+        all_video_keys = []
         total_loss = 0.0
 
-        for x, label, video_id in dataloader:
+        for x, label, video_id, label_cat in dataloader:
             x = x.to(self.device)
             label = label.to(self.device)
             B, W, T, D = x.shape
@@ -68,35 +69,38 @@ class Tester:
             # sklearn uses CPU, also off-loads the GPU a bit.
             all_logits.append(logits.cpu())
             all_labels.append(label_flat.cpu())
-            # Replicate video_id W times, preserving per-batch order.
-            for vid in video_id:
-                all_video_ids.extend([vid] * W)
+            # Replicate (label_cat, video_id) W times, preserving per-batch order.
+            for lc, vid in zip(label_cat, video_id):
+                all_video_keys.extend([(lc, vid)] * W)
 
         logits = torch.cat(all_logits, dim=0)
         labels = torch.cat(all_labels, dim=0)
-        return logits, labels, all_video_ids, total_loss / max(len(dataloader), 1)
+        return logits, labels, all_video_keys, total_loss / max(len(dataloader), 1)
 
 
-    def _pool_windows_per_video(self, window_probs, window_labels, window_video_ids):
+    def _pool_windows_per_video(self, window_probs, window_labels, window_video_keys):
         """Collapse window-level fake-class probs into one prob per video using
-        self.aggregation ('mean' or 'max').
+        self.aggregation ('mean', 'max', or 'softmax').
+        window_video_keys is a list of (label_cat, video_id) tuples; FF++ fakes
+        reuse video_id strings across manipulations, so (label_cat, video_id)
+        is the real unique key.
         Returns three arrays of length num_videos:
-            per_video_probs, per_video_labels, video_ids (in first-seen order).
+            per_video_probs, per_video_labels, video_keys (in first-seen order).
         """
         # window_probs: [num_windows, num_classes] numpy
         prob_pos = window_probs[:, 1]
-        groups = defaultdict(list)          # video_id -> list of prob_pos values
-        labels_per_video = {}               # video_id -> int label
-        order = []                          # preserve first-seen order of videos
-        for i, vid in enumerate(window_video_ids):
-            if vid not in labels_per_video:
-                labels_per_video[vid] = int(window_labels[i])
-                order.append(vid)
+        groups = defaultdict(list)          # (label_cat, video_id) -> list of prob_pos
+        labels_per_video = {}               # (label_cat, video_id) -> int label
+        order = []                          # preserve first-seen order of video keys
+        for i, key in enumerate(window_video_keys):
+            if key not in labels_per_video:
+                labels_per_video[key] = int(window_labels[i])
+                order.append(key)
             else:
                 # Sanity: same video should always have the same label.
-                assert labels_per_video[vid] == int(window_labels[i]), \
-                    f"Inconsistent labels for video {vid}"
-            groups[vid].append(prob_pos[i])
+                assert labels_per_video[key] == int(window_labels[i]), \
+                    f"Inconsistent labels for video {key}"
+            groups[key].append(prob_pos[i])
 
         if self.aggregation == 'mean':
             agg_fn = np.mean
@@ -164,12 +168,12 @@ class Tester:
         tag = 'shuffled' if shuffle_frames else 'standard'
         self.logger.info(f"Evaluating ({tag})...")
 
-        logits, labels, video_ids, loss = self._forward_all(dataloader, shuffle_frames)
+        logits, labels, video_keys, loss = self._forward_all(dataloader, shuffle_frames)
         probs = torch.softmax(logits, dim=1).numpy()
         labels_np = labels.numpy()
 
         per_window = self._compute_metrics(probs[:, 1], labels_np, loss=loss)
-        v_prob, v_label, _ = self._pool_windows_per_video(probs, labels_np, video_ids)
+        v_prob, v_label, _ = self._pool_windows_per_video(probs, labels_np, video_keys)
         per_video = self._compute_metrics(v_prob, v_label)
 
         result = {

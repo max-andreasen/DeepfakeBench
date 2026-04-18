@@ -12,3 +12,17 @@
 2026-04-15 09:51:57,606 - INFO -   per-window: acc=0.8314  auc=0.8622  loss=0.3525
 2026-04-15 09:51:57,606 - INFO -   per-video : acc=0.7179  auc=0.9102  acc@best=0.8607 (thr=0.255)
 2026-04-15 09:51:57,607 - INFO - Wrote results.json and eval_config.json to results/transformer_2026-04-15-09-36-55/test_eval
+2026-04-17 11:28:57,858 - INFO - CLI args: {'config': 'configs/test_eval.yaml', 'run_tag': 'test_eval', 'shuffle_frames': None}
+2026-04-17 11:28:57,866 - INFO - Resolved config: {'output_dir': 'results/pilot_tests/preprocessing', 'trained_model_dir': 'training/trained/pilot_test/preprocessing/transformer_2026-04-15-09-36-dlib', 'root_dir': '/home/max-andreasen/GitHub/DeepfakeBench', 'split_file': 'datasets/splits/FaceForensics++.csv', 'catalogue_file': 'clip/embeddings/dlib/ViT-L-14-336-quickgelu_dim768/catalogue.csv', 'test_dataset': 'FaceForensics++', 'batch_size': 96, 'num_frames': 32, 'window_aggregation': 'mean', 'shuffle_frames': False, 'device': 'cuda', 'seed': 1024, 'workers': 4}
+2026-04-17 11:28:57,866 - INFO - Output dir: results/pilot_tests/preprocessing/transformer_2026-04-15-09-36-dlib/test_eval
+2026-04-17 11:28:58,187 - INFO - Loaded model_type=transformer kwargs={'clip_embed_dim': 768, 'num_frames': 32, 'num_classes': 2, 'num_layers': 8, 'n_heads': 8, 'dim_feedforward': 3072, 'attn_dropout': 0.1, 'mlp_dropout': 0.4}
+2026-04-17 11:28:58,188 - INFO - Trained on: ['FaceForensics++']
+2026-04-17 11:28:58,188 - INFO - Parameters: 57,295,426
+2026-04-17 11:28:58,210 - INFO - Total batches: 8  (test videos: 700)
+2026-04-17 11:28:58,583 - INFO - Evaluating (standard)...
+2026-04-17 11:28:59,959 - INFO -   per-window: acc=0.8314  auc=0.8623  loss=0.3441
+2026-04-17 11:28:59,959 - INFO -   per-video : acc=0.8300  auc=0.8689  acc@best=0.7057 (thr=0.165)
+2026-04-17 11:28:59,960 - INFO - Evaluating (shuffled)...
+2026-04-17 11:29:01,060 - INFO -   per-window: acc=0.8314  auc=0.8622  loss=0.3443
+2026-04-17 11:29:01,060 - INFO -   per-video : acc=0.8300  auc=0.8689  acc@best=0.7071 (thr=0.165)
+2026-04-17 11:29:01,061 - INFO - Wrote results.json and eval_config.json to results/pilot_tests/preprocessing/transformer_2026-04-15-09-36-dlib/test_eval

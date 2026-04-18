@@ -2,14 +2,19 @@
 Test-time data loader.
 
 One video per __getitem__. Returns:
-    (x([n_windows, T, D]), label, video_id)
+    (x([n_windows, T, D]), label, video_id, label_cat)
 
-    Basically, in almost all cases, we have [3, 32, D], label, video_id.
+    Basically, in almost all cases, we have [3, 32, D], label, video_id, label_cat.
 
 where n_windows = total_frames // T
 DataLoader batches into [B, n_windows, T, D].
 The Tester flattens windows into the batch dim for forward, then averages
 per-window logits back to one prediction per video.
+
+label_cat is returned so per-video aggregation can key on (label_cat, video_id):
+FF++ fake manipulations (FF-DF, FF-F2F, FF-FS, FF-NT) reuse the same video_id
+strings (e.g. '000_003'), so grouping by video_id alone pools all 4 manipulations
+into one "video" and over-averages.
 """
 
 from pathlib import Path
@@ -23,7 +28,7 @@ JOIN_KEYS = ["dataset", "label_cat", "video_id"]
 
 
 class DeepfakeTestDataset(Dataset):
-    def __init__(self, split_file, catalogue_file, num_frames=32):
+    def __init__(self, split_file, catalogue_file, num_frames=32, split="test"):
         split_df = pd.read_csv(Path(split_file))
         catalogue_df = pd.read_csv(Path(catalogue_file))
 
@@ -32,11 +37,11 @@ class DeepfakeTestDataset(Dataset):
 
         join_keys = [k for k in JOIN_KEYS if k in catalogue_df.columns]
         df = split_df.merge(catalogue_df, on=join_keys, how="inner")
-        df = df[df["split"] == "test"].reset_index(drop=True)
+        df = df[df["split"] == split].reset_index(drop=True)
 
         if len(df) == 0:
             raise ValueError(
-                f"No rows for split='test' after joining {split_file} with {catalogue_file}."
+                f"No rows for split='{split}' after joining {split_file} with {catalogue_file}."
             )
         if "n_frames" not in df.columns:
             raise ValueError(
@@ -63,9 +68,16 @@ class DeepfakeTestDataset(Dataset):
         self.n_windows = n_windows
         self.usable_frames = n_windows * num_frames  # truncate any remainder
 
+        if "label_cat" not in df.columns:
+            raise ValueError(
+                f"Catalogue {catalogue_file} missing 'label_cat' column; "
+                "required for correct per-video aggregation."
+            )
+
         self.video_paths = [str(Path(p)) for p in df["embedding_file"]]
         self.video_labels = [int(x) for x in df["label"]]
         self.video_ids = [str(v) for v in df["video_id"]]
+        self.video_label_cats = [str(v) for v in df["label_cat"]]
 
         print(
             f"DeepfakeTestDataset: {len(self.video_paths)} videos, "
@@ -82,4 +94,5 @@ class DeepfakeTestDataset(Dataset):
         x = x.reshape(self.n_windows, self.num_frames, -1)  # [n_windows, T, D]
         label = torch.tensor(self.video_labels[i], dtype=torch.long)
         video_id = self.video_ids[i]
-        return x, label, video_id
+        label_cat = self.video_label_cats[i]
+        return x, label, video_id, label_cat

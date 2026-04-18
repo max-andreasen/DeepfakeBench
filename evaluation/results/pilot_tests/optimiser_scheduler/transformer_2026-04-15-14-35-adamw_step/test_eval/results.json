@@ -1,11 +1,12 @@
 {
-  "evaluated_utc": "2026-04-15T12:53:03.122587+00:00",
-  "trained_model_dir": "training/trained/pilot_test/transformer_2026-04-15-14-35-adamw_step",
+  "evaluated_utc": "2026-04-17T09:48:04.752122+00:00",
+  "trained_model_dir": "training/trained/pilot_test/optimiser_scheduler/transformer_2026-04-15-14-35-adamw_step",
   "split_file": "datasets/splits/FaceForensics++.csv",
   "catalogue_file": "clip/embeddings/mtcnn/ViT-L-14-336-quickgelu_dim768/catalogue.csv",
   "test_dataset": "FaceForensics++",
   "num_frames": 32,
   "window_aggregation": "mean",
+  "softmax_temp": null,
   "seed": 1024,
   "standard": {
     "per_window": {
@@ -20,36 +21,36 @@
         "fp": 0,
         "fn": 420
       },
-      "best_thresh": 0.1998862624168396,
+      "best_thresh": 0.1998862475156784,
       "acc_at_best_thresh": 0.6233333333333333,
       "num_samples": 2100,
-      "loss": 0.41231559352441266
+      "loss": 0.4012481402605772
     },
     "per_video": {
-      "accuracy": 0.5,
-      "auc": 0.8641836734693877,
+      "accuracy": 0.8,
+      "auc": 0.7606122448979592,
       "precision": 0.0,
       "recall": 0.0,
       "f1": 0.0,
       "confusion": {
         "tp": 0,
-        "tn": 140,
+        "tn": 560,
         "fp": 0,
         "fn": 140
       },
-      "best_thresh": 0.23437459766864777,
-      "acc_at_best_thresh": 0.8142857142857143,
-      "num_samples": 280
+      "best_thresh": 0.17820270359516144,
+      "acc_at_best_thresh": 0.6128571428571429,
+      "num_samples": 700
     },
     "num_windows": 2100,
-    "num_videos": 280,
+    "num_videos": 700,
     "aggregation": "mean",
     "shuffle_frames": false
   },
   "shuffled": {
     "per_window": {
       "accuracy": 0.8,
-      "auc": 0.7572760770975057,
+      "auc": 0.7573611111111112,
       "precision": 0.0,
       "recall": 0.0,
       "f1": 0.0,
@@ -60,28 +61,28 @@
         "fn": 420
       },
       "best_thresh": 0.19882522523403168,
-      "acc_at_best_thresh": 0.6223809523809524,
+      "acc_at_best_thresh": 0.6228571428571429,
       "num_samples": 2100,
-      "loss": 0.4123122983358123
+      "loss": 0.4011850915849209
     },
     "per_video": {
-      "accuracy": 0.5,
-      "auc": 0.8642857142857142,
+      "accuracy": 0.8,
+      "auc": 0.761001275510204,
       "precision": 0.0,
       "recall": 0.0,
       "f1": 0.0,
       "confusion": {
         "tp": 0,
-        "tn": 140,
+        "tn": 560,
         "fp": 0,
         "fn": 140
       },
-      "best_thresh": 0.2349006086587906,
-      "acc_at_best_thresh": 0.8142857142857143,
-      "num_samples": 280
+      "best_thresh": 0.1787801831960678,
+      "acc_at_best_thresh": 0.6142857142857143,
+      "num_samples": 700
     },
     "num_windows": 2100,
-    "num_videos": 280,
+    "num_videos": 700,
     "aggregation": "mean",
     "shuffle_frames": true
   }

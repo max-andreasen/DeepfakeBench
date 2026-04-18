@@ -1,0 +1,14 @@
+2026-04-17 19:52:57,974 - INFO - CLI args: {'config': 'configs/test_eval.yaml', 'run_tag': 'test_eval', 'shuffle_frames': None}
+2026-04-17 19:52:57,974 - INFO - Resolved config: {'output_dir': 'results/pilot_tests/trans_proj', 'trained_model_dir': 'training/trained/trans_proj/transformer_2026-04-17-19-47_baseline', 'root_dir': '/home/max-andreasen/GitHub/DeepfakeBench', 'split_file': 'datasets/splits/FaceForensics++.csv', 'catalogue_file': 'clip/embeddings/mtcnn/ViT-L-14-336-quickgelu_dim768/catalogue.csv', 'test_dataset': 'FaceForensics++', 'batch_size': 96, 'num_frames': 32, 'window_aggregation': 'mean', 'shuffle_frames': False, 'device': 'cuda', 'seed': 1024, 'workers': 4}
+2026-04-17 19:52:57,974 - INFO - Output dir: results/pilot_tests/trans_proj/transformer_2026-04-17-19-47_baseline/test_eval
+2026-04-17 19:52:58,208 - INFO - Loaded model_type=transformer kwargs={'clip_embed_dim': 768, 'num_frames': 32, 'num_classes': 2, 'num_layers': 8, 'n_heads': 8, 'dim_feedforward': 3072, 'attn_dropout': 0.1, 'mlp_dropout': 0.4}
+2026-04-17 19:52:58,208 - INFO - Trained on: ['FaceForensics++']
+2026-04-17 19:52:58,208 - INFO - Parameters: 57,025,154
+2026-04-17 19:52:58,237 - INFO - Total batches: 8  (test videos: 700)
+2026-04-17 19:52:58,560 - INFO - Evaluating (standard)...
+2026-04-17 19:52:59,972 - INFO -   per-window: acc=0.8086  auc=0.8362  loss=0.3579
+2026-04-17 19:52:59,973 - INFO -   per-video : acc=0.8100  auc=0.8396  acc@best=0.7314 (thr=0.257)
+2026-04-17 19:52:59,973 - INFO - Evaluating (shuffled)...
+2026-04-17 19:53:01,079 - INFO -   per-window: acc=0.8081  auc=0.8362  loss=0.3578
+2026-04-17 19:53:01,080 - INFO -   per-video : acc=0.8100  auc=0.8398  acc@best=0.7314 (thr=0.257)
+2026-04-17 19:53:01,080 - INFO - Wrote results.json and eval_config.json to results/pilot_tests/trans_proj/transformer_2026-04-17-19-47_baseline/test_eval
