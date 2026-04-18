@@ -1,0 +1,19 @@
+dataset_name: FaceForensics++
+input_json: preprocessing/rearrangements/dataset_json_mtcnn/FaceForensics++.json
+
+output_base_dir: clip/embeddings/probing
+
+model:
+  name: ViT-L-14-336-quickgelu
+  pretrained: openai
+
+extract:
+  blocks: [4, 8, 12, 16, 20, 22]
+  include_final: true
+
+T: 96
+batch_size: null
+seed: 1024
+
+device: cuda
+max_videos: null

@@ -10,4 +10,8 @@
 /datasets
 preprocessing/dataset_json_mtcnn/
 preprocessing/dataset_json_dlib/
+preprocessing/rearrangements/dataset_json/
+preprocessing/rearrangements/dataset_json_dlib/
+preprocessing/rearrangements/dataset_json_mtcnn/
+preprocessing/rearrangements/raw_video_json/
 CLAUDE.md

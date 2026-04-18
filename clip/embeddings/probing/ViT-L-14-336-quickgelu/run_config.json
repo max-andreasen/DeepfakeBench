@@ -1,0 +1,38 @@
+{
+  "created_utc": "2026-04-18T13:42:10.836824+00:00",
+  "completed": false,
+  "completed_utc": null,
+  "layer_dims": {
+    "pre_proj": 1024,
+    "final": 768,
+    "block_4": 1024,
+    "block_8": 1024,
+    "block_12": 1024,
+    "block_16": 1024,
+    "block_20": 1024,
+    "block_22": 1024
+  },
+  "dataset_name": "FaceForensics++",
+  "input_json": "preprocessing/rearrangements/dataset_json_mtcnn/FaceForensics++.json",
+  "output_base_dir": "clip/embeddings/probing",
+  "model": {
+    "name": "ViT-L-14-336-quickgelu",
+    "pretrained": "openai"
+  },
+  "extract": {
+    "blocks": [
+      4,
+      8,
+      12,
+      16,
+      20,
+      22
+    ],
+    "include_final": true
+  },
+  "T": 96,
+  "batch_size": null,
+  "seed": 1024,
+  "device": "cuda",
+  "max_videos": null
+}

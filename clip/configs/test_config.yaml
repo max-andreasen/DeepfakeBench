@@ -1,0 +1,27 @@
+# --- what to embed ------------------------------------------------------------
+dataset_name: FaceForensics++
+input_json: preprocessing/rearrangements/dataset_json_mtcnn/FaceForensics++.json
+
+# --- where outputs go ---------------------------------------------------------
+output_base_dir: clip/embeddings/test
+
+# --- model --------------------------------------------------------------------
+model:
+  name: ViT-L-14-336-quickgelu
+  pretrained: openai
+
+# --- what to extract ----------------------------------------------------------
+extract:
+  blocks: [4, 8, 12, 16, 20, 22] # e.g. [4, 8, 12, 16, 20] for layer-wise AUC probing
+  include_final: true
+
+# --- sampling -----------------------------------------------------------------
+T: 96 # frames per window
+batch_size:
+  null # CLIP forward batch size. null = all T frames in one forward (fastest).
+  # Set an int (e.g. 32) only if OOM.
+seed: 1024
+
+# --- runtime ------------------------------------------------------------------
+device: cuda
+max_videos: null # null = all; int = cap total videos (debugging)

@@ -1,0 +1,8 @@
+2026-04-18 15:42:03,863 - INFO - ============================================================
+2026-04-18 15:42:03,863 - INFO - Starting run | config=configs/probing.yaml | resume=False
+2026-04-18 15:42:03,863 - INFO - Dataset: FaceForensics++  T=96  seed=1024  max_videos=None  device=cuda
+2026-04-18 15:42:03,863 - INFO - Model: ViT-L-14-336-quickgelu (pretrained=openai)
+2026-04-18 15:42:03,863 - INFO - Extract: blocks=[4, 8, 12, 16, 20, 22], include_final=True
+2026-04-18 15:42:03,863 - INFO - Output dir: /home/max-andreasen/GitHub/DeepfakeBench/clip/embeddings/probing/ViT-L-14-336-quickgelu
+2026-04-18 15:42:04,184 - INFO - Built DataFrame: 5000 videos
+2026-04-18 15:42:10,835 - INFO - Layers: ['pre_proj', 'final', 'block_4', 'block_8', 'block_12', 'block_16', 'block_20', 'block_22']  dims: {'pre_proj': 1024, 'final': 768, 'block_4': 1024, 'block_8': 1024, 'block_12': 1024, 'block_16': 1024, 'block_20': 1024, 'block_22': 1024}
