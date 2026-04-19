@@ -216,7 +216,13 @@ def save_embedding_npz(embedding: torch.Tensor, out_dir: Path, video_id: str) ->
 
 
 def write_catalogue(layer_dir: Path, new_rows: List[dict]) -> None:
-    """Append rows to <layer_dir>/catalogue.csv, dedup by video_id, atomic swap.
+    """Append rows to <layer_dir>/catalogue.csv, dedup by
+    (dataset, label_cat, video_id), atomic swap.
+
+    Dedup MUST key on the full triplet: FF++ fake manipulations (FF-DF, FF-F2F,
+    FF-FS, FF-NT) reuse the same video_id strings (e.g. '000_003'), so keying
+    on video_id alone collapses them into one surviving label_cat and loses
+    3/4 of the fakes from the catalogue.
 
     video_id is forced to string on read/write: pandas' CSV reader infers int
     from all-numeric ids (e.g. FF++ '957'), which breaks sort/dedup when merged
@@ -231,12 +237,16 @@ def write_catalogue(layer_dir: Path, new_rows: List[dict]) -> None:
     if path.exists():
         existing = pd.read_csv(path, dtype={"video_id": str})
         combined = pd.concat([existing, new_df], ignore_index=True) if len(new_df) else existing
-        combined = combined.drop_duplicates(subset="video_id", keep="last")
+        combined = combined.drop_duplicates(
+            subset=["dataset", "label_cat", "video_id"], keep="last"
+        )
     else:
         combined = new_df
     if not combined.empty:
         combined["video_id"] = combined["video_id"].astype(str)
-        combined = combined.sort_values("video_id").reset_index(drop=True)
+        combined = combined.sort_values(
+            ["dataset", "label_cat", "video_id"]
+        ).reset_index(drop=True)
     tmp = path.with_suffix(".tmp.csv")
     combined.to_csv(tmp, index=False)
     tmp.replace(path)

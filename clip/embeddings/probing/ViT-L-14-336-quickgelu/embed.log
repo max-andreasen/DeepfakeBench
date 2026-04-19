@@ -6,3 +6,24 @@
 2026-04-18 15:42:03,863 - INFO - Output dir: /home/max-andreasen/GitHub/DeepfakeBench/clip/embeddings/probing/ViT-L-14-336-quickgelu
 2026-04-18 15:42:04,184 - INFO - Built DataFrame: 5000 videos
 2026-04-18 15:42:10,835 - INFO - Layers: ['pre_proj', 'final', 'block_4', 'block_8', 'block_12', 'block_16', 'block_20', 'block_22']  dims: {'pre_proj': 1024, 'final': 768, 'block_4': 1024, 'block_8': 1024, 'block_12': 1024, 'block_16': 1024, 'block_20': 1024, 'block_22': 1024}
+2026-04-18 20:38:07,303 - INFO - Embedded 5000 videos.
+2026-04-18 20:38:07,316 - INFO - Embedding finished. Failures: 0
+2026-04-19 11:18:21,819 - INFO - ============================================================
+2026-04-19 11:18:21,819 - INFO - Starting run | config=configs/probing.yaml | resume=False
+2026-04-19 11:18:21,819 - INFO - Dataset: FaceForensics++  T=96  seed=1024  max_videos=None  device=cuda
+2026-04-19 11:18:21,819 - INFO - Model: ViT-L-14-336-quickgelu (pretrained=openai)
+2026-04-19 11:18:21,819 - INFO - Extract: blocks=[4, 8, 12, 16, 20, 22], include_final=True
+2026-04-19 11:18:21,819 - INFO - Output dir: /home/max-andreasen/GitHub/DeepfakeBench/clip/embeddings/probing/ViT-L-14-336-quickgelu
+2026-04-19 11:18:22,130 - INFO - Built DataFrame: 5000 videos
+2026-04-19 11:18:28,849 - INFO - Layers: ['pre_proj', 'final', 'block_4', 'block_8', 'block_12', 'block_16', 'block_20', 'block_22']  dims: {'pre_proj': 1024, 'final': 768, 'block_4': 1024, 'block_8': 1024, 'block_12': 1024, 'block_16': 1024, 'block_20': 1024, 'block_22': 1024}
+2026-04-19 11:18:56,502 - INFO - ============================================================
+2026-04-19 11:18:56,502 - INFO - Starting run | config=configs/probing.yaml | resume=True
+2026-04-19 11:18:56,502 - INFO - Dataset: FaceForensics++  T=96  seed=1024  max_videos=None  device=cuda
+2026-04-19 11:18:56,502 - INFO - Model: ViT-L-14-336-quickgelu (pretrained=openai)
+2026-04-19 11:18:56,502 - INFO - Extract: blocks=[4, 8, 12, 16, 20, 22], include_final=True
+2026-04-19 11:18:56,502 - INFO - Output dir: /home/max-andreasen/GitHub/DeepfakeBench/clip/embeddings/probing/ViT-L-14-336-quickgelu
+2026-04-19 11:18:56,810 - INFO - Built DataFrame: 5000 videos
+2026-04-19 11:19:01,359 - INFO - Layers: ['pre_proj', 'final', 'block_4', 'block_8', 'block_12', 'block_16', 'block_20', 'block_22']  dims: {'pre_proj': 1024, 'final': 768, 'block_4': 1024, 'block_8': 1024, 'block_12': 1024, 'block_16': 1024, 'block_20': 1024, 'block_22': 1024}
+2026-04-19 11:19:01,359 - INFO - Resuming run originally started 2026-04-18T18:38:07.315922+00:00.
+2026-04-19 11:19:23,436 - INFO - All 5000 videos already embedded — nothing to do.
+2026-04-19 11:19:23,445 - INFO - Embedding finished. Failures: 0
