@@ -128,7 +128,6 @@ def build_cell_config(base_config, embeddings_dir, layer):
 
 
 # ---- evaluation ----
-
 def evaluate_on_split(model, config, split, shuffle_frames, logger):
     """Tester.evaluate on one split. num_workers=0 because DeepfakeTestDataset
     was loaded via importlib under a custom module name (can't pickle to

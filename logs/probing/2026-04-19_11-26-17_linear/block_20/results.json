@@ -1,0 +1,88 @@
+{
+  "layer": "block_20",
+  "model_type": "linear",
+  "train": {
+    "best_val_auroc": 0.939655612244898,
+    "final_val_auroc": 0.9291198979591837,
+    "epochs_completed": 25
+  },
+  "test_std": {
+    "per_window": {
+      "accuracy": 0.8733333333333333,
+      "auc": 0.9212825963718821,
+      "precision": 0.6994818652849741,
+      "recall": 0.6428571428571429,
+      "f1": 0.6699751861042184,
+      "confusion": {
+        "tp": 270,
+        "tn": 1564,
+        "fp": 116,
+        "fn": 150
+      },
+      "best_thresh": 0.09597703069448471,
+      "acc_at_best_thresh": 0.8347619047619048,
+      "num_samples": 2100,
+      "loss": 0.33816643499515275
+    },
+    "per_video": {
+      "accuracy": 0.8657142857142858,
+      "auc": 0.9274617346938775,
+      "precision": 0.6742424242424242,
+      "recall": 0.6357142857142857,
+      "f1": 0.6544117647058824,
+      "confusion": {
+        "tp": 89,
+        "tn": 517,
+        "fp": 43,
+        "fn": 51
+      },
+      "best_thresh": 0.10433457046747208,
+      "acc_at_best_thresh": 0.8414285714285714,
+      "num_samples": 700
+    },
+    "num_windows": 2100,
+    "num_videos": 700,
+    "aggregation": "mean",
+    "shuffle_frames": false
+  },
+  "test_shuf": {
+    "per_window": {
+      "accuracy": 0.8733333333333333,
+      "auc": 0.9212825963718821,
+      "precision": 0.6994818652849741,
+      "recall": 0.6428571428571429,
+      "f1": 0.6699751861042184,
+      "confusion": {
+        "tp": 270,
+        "tn": 1564,
+        "fp": 116,
+        "fn": 150
+      },
+      "best_thresh": 0.0959770455956459,
+      "acc_at_best_thresh": 0.8347619047619048,
+      "num_samples": 2100,
+      "loss": 0.3381664343178272
+    },
+    "per_video": {
+      "accuracy": 0.8657142857142858,
+      "auc": 0.9274617346938775,
+      "precision": 0.6742424242424242,
+      "recall": 0.6357142857142857,
+      "f1": 0.6544117647058824,
+      "confusion": {
+        "tp": 89,
+        "tn": 517,
+        "fp": 43,
+        "fn": 51
+      },
+      "best_thresh": 0.10433460026979446,
+      "acc_at_best_thresh": 0.8414285714285714,
+      "num_samples": 700
+    },
+    "num_windows": 2100,
+    "num_videos": 700,
+    "aggregation": "mean",
+    "shuffle_frames": true
+  },
+  "wallclock": 83.99818819394568
+}

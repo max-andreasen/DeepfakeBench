@@ -15,3 +15,7 @@ preprocessing/rearrangements/dataset_json_dlib/
 preprocessing/rearrangements/dataset_json_mtcnn/
 preprocessing/rearrangements/raw_video_json/
 CLAUDE.md
+
+# Keep per-run artifacts (results/config/summary/plots) but not full training logs.
+logs/**/training.log
+logs/**/orchestrator.log

@@ -140,6 +140,12 @@ def train_from_config(config, trial=None, log_path=None):
         log_path = build_log_path(config)
     os.makedirs(log_path, exist_ok=True)
     logger = create_logger(os.path.join(log_path, 'training.log'))
+    model_type = config['model_type']
+    embed_dim = config['model'][model_type].get('clip_embed_dim', '?')
+    logger.info(f"CLIP embeddings: {config['catalogue_file']}  (dim={embed_dim})")
+    logger.info(f"Data split: {config['split_file']}")
+    logger.info(f"  train: {config['num_frames']['train']} frames/video, batch_size={config['batchSize']['train']}")
+    logger.info(f"  val:   {config['num_frames']['val']} frames/video, batch_size={config['batchSize']['val']}")
     logger.info(f"Config: {config}")
 
     train_loader = prepare_data(config, 'train')

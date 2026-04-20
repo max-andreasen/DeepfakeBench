@@ -1,5 +1,5 @@
 # log dir
-log_dir: trained/trans_proj
+log_dir: trained/
 # model setting
 model_type: transformer # must match a key in MODELS dict: transformer, linear, bigru
 

@@ -1,0 +1,88 @@
+{
+  "layer": "block_4",
+  "model_type": "bigru",
+  "train": {
+    "best_val_auroc": 0.5502933673469388,
+    "final_val_auroc": 0.5487755102040817,
+    "epochs_completed": 50
+  },
+  "test_std": {
+    "per_window": {
+      "accuracy": 0.8,
+      "auc": 0.5477281746031746,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "confusion": {
+        "tp": 0,
+        "tn": 1680,
+        "fp": 0,
+        "fn": 420
+      },
+      "best_thresh": 0.1987348049879074,
+      "acc_at_best_thresh": 0.5676190476190476,
+      "num_samples": 2100,
+      "loss": 0.49823120778257196
+    },
+    "per_video": {
+      "accuracy": 0.8,
+      "auc": 0.5484438775510204,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "confusion": {
+        "tp": 0,
+        "tn": 560,
+        "fp": 0,
+        "fn": 140
+      },
+      "best_thresh": 0.19888807833194733,
+      "acc_at_best_thresh": 0.58,
+      "num_samples": 700
+    },
+    "num_windows": 2100,
+    "num_videos": 700,
+    "aggregation": "mean",
+    "shuffle_frames": false
+  },
+  "test_shuf": {
+    "per_window": {
+      "accuracy": 0.8,
+      "auc": 0.5476303854875284,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "confusion": {
+        "tp": 0,
+        "tn": 1680,
+        "fp": 0,
+        "fn": 420
+      },
+      "best_thresh": 0.19873285293579102,
+      "acc_at_best_thresh": 0.5714285714285714,
+      "num_samples": 2100,
+      "loss": 0.4982391907410188
+    },
+    "per_video": {
+      "accuracy": 0.8,
+      "auc": 0.548609693877551,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "confusion": {
+        "tp": 0,
+        "tn": 560,
+        "fp": 0,
+        "fn": 140
+      },
+      "best_thresh": 0.1987145096063614,
+      "acc_at_best_thresh": 0.5757142857142857,
+      "num_samples": 700
+    },
+    "num_windows": 2100,
+    "num_videos": 700,
+    "aggregation": "mean",
+    "shuffle_frames": true
+  },
+  "wallclock": 168.7447283169604
+}

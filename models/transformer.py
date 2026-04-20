@@ -62,34 +62,23 @@ class Transformer(nn.Module):
         # TODO: Is num_classes needed? Should always be 2, can't think of a scenario where it is more than 2.
         # TODO: Might re-name num_frames to e.g. T, to be consistent throughout the code-base.
 
-        # --- Input projection (Pilot 2) ---
-        # Swap between options by (un)commenting the block you want. Only one
-        # active at a time. `proj_out_dim` drives `self.d_model` below, so
-        # cls_token / positional_encoding / encoder_layer / classifier all
-        # follow automatically. For reduced d_model (C/D = 512, E = 256),
-        # remember `n_heads` must divide d_model (8 works for both 512 and 256;
-        # 16 works for 512 but not 256) and `dim_feedforward` should scale
-        # roughly 4× d_model (so ~2048 for 512, ~1024 for 256).
-
-        # Option A — no projection (CLIP embeddings go straight in).
-
+        # Option 1
+        # no projection.
         """
         self.input_proj = nn.Identity()
         proj_out_dim = clip_embed_dim
+        """
 
-
-        # Option C — Linear + LN, reduce to 512. Mild dim reduction + LN
-        # normalises input stats before the first encoder block.
+        # Option 2
+        # Linear + LN, reduce to 512.
         proj_out_dim = 512
         self.input_proj = nn.Sequential(
              nn.Linear(clip_embed_dim, proj_out_dim),
              nn.LayerNorm(proj_out_dim),
         )
-        """
 
-        # Option D — 2-layer MLP + LN, reduce to 512. Same target dim as C;
-        # isolates the effect of nonlinearity at matched capacity.
-        #
+        # Option 3
+        # 2-layers + LN, reduce to 512.
         """
         proj_out_dim = 512
         self.input_proj = nn.Sequential(
@@ -101,13 +90,15 @@ class Transformer(nn.Module):
         )
         """
 
-        # Option E — Linear + LN with dim reduction to 256 (KDD paper).
-        # Stronger regularisation via aggressive dim reduction.
+        # Option 4
+        # Linear + LN, reduce to 256 (KDD paper).
+        """
         proj_out_dim = 256
         self.input_proj = nn.Sequential(
             nn.Linear(clip_embed_dim, proj_out_dim),
             nn.LayerNorm(proj_out_dim),
         )
+        """
 
         self.d_model = proj_out_dim
 
@@ -123,12 +114,9 @@ class Transformer(nn.Module):
         # Learnable positional encoding.
         # Shape (1, T+1, D): one batch slot, T frames + 1 CLS slot, embedding dim.
         # Added to the token stream so the transformer can tell frame order
-        # (self-attention is permutation-invariant without this). Learnable rather
-        # than sinusoidal: modern default, trained end-to-end with the rest of the model.
         self.positional_encoding = nn.Parameter(torch.randn(1, num_frames + 1, self.d_model))
 
         # One transformer encoder block (MHA + FFN + two LayerNorms + residuals).
-        # `num_layers` copies of this block are stacked by nn.TransformerEncoder below.
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=self.d_model,
             dim_feedforward=self.dim_feedforward,   # width of FFN inner layer; standard is 4*D
@@ -142,21 +130,12 @@ class Transformer(nn.Module):
 
         self.temporal_transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
 
-        # Per-layer dropout for the 4 hidden blocks of the MLP head.
-        # Static mode: same mlp_dropout on every layer (standard practice; e.g. KDD paper uses 0.515).
-        # Decay mode:  linear ramp mlp_dropout -> 0 across layers (heuristic, not a standard convention).
-        n_drops = 2
-        if mlp_dropout_decay:
-            mlp_drops = [round(mlp_dropout * (1 - i / n_drops), 3) for i in range(n_drops)]
-        else:
-            mlp_drops = [mlp_dropout] * n_drops
-
-        # MLP Classification Head
+        # MLP Classification Head 2 layers
         self.classifier = nn.Sequential(
-            nn.Linear(self.d_model, 384),   # or 512
+            nn.Linear(self.d_model, 256),   # or 512
             nn.GELU(),
             nn.Dropout(0.4),
-            nn.Linear(384, num_classes),
+            nn.Linear(256, num_classes),
         )
 
         # self.classifier = nn.Linear(self.d_model, num_classes)

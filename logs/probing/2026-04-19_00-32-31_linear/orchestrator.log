@@ -1,9 +1,0 @@
-2026-04-19 00:32:31,495 - INFO - Layer probe: model_type=linear  layers=['block_4', 'block_8', 'block_12', 'block_16', 'block_20', 'block_22', 'pre_proj', 'final']
-2026-04-19 00:32:31,495 - INFO - Base config: training/configs/linear.yaml
-2026-04-19 00:32:31,495 - INFO - Embeddings dir: /home/max-andreasen/GitHub/DeepfakeBench/clip/embeddings/probing/ViT-L-14-336-quickgelu
-2026-04-19 00:32:31,495 - INFO - Run root: /home/max-andreasen/GitHub/DeepfakeBench/logs/probing/2026-04-19_00-32-31_linear
-2026-04-19 00:32:31,495 - INFO - [block_4] train (clip_embed_dim=1024)...
-2026-04-19 00:33:41,446 - INFO - [block_4] done in 69.9s  val_auc=0.7080  test_video_std=0.6884  shuf=0.6884  gap=+0.0000
-2026-04-19 00:33:41,447 - INFO - [block_8] train (clip_embed_dim=1024)...
-2026-04-19 00:34:55,088 - INFO - [block_8] done in 73.5s  val_auc=0.9489  test_video_std=0.9293  shuf=0.9293  gap=+0.0000
-2026-04-19 00:34:55,088 - INFO - [block_12] train (clip_embed_dim=1024)...

@@ -44,34 +44,14 @@ class BiGRU(nn.Module):
             dropout=gru_dropout if num_layers > 1 else 0.0,
         )
 
-        # --- Classifier MLP head ---------------------
-        # Input dim = 2 * hidden_dim  (concat of last forward + last backward hidden states).
-        # Mirrors the Transformer head's 4-layer structure
-        n_drops = 4
-        if mlp_dropout_decay:
-            mlp_drops = [round(mlp_dropout * (1 - i / n_drops), 3) for i in range(n_drops)]
-        else:
-            mlp_drops = [mlp_dropout] * n_drops
+        # --- MLP head 2 layers ---------------------
         in_dim = 2 * hidden_dim
 
         self.classifier = nn.Sequential(
-            nn.Linear(in_dim, 512),
+            nn.Linear(in_dim, 256),
             nn.GELU(),
-            nn.Dropout(mlp_drops[0]),
-
-            nn.Linear(512, 256),
-            nn.GELU(),
-            nn.Dropout(mlp_drops[1]),
-
-            nn.Linear(256, 128),
-            nn.GELU(),
-            nn.Dropout(mlp_drops[2]),
-
-            nn.Linear(128, 64),
-            nn.GELU(),
-            nn.Dropout(mlp_drops[3]),
-
-            nn.Linear(64, num_classes),
+            nn.Dropout(0.4),
+            nn.Linear(256, num_classes),
         )
 
     def forward(self, x):

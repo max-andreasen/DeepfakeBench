@@ -1,0 +1,88 @@
+{
+  "layer": "block_4",
+  "model_type": "transformer",
+  "train": {
+    "best_val_auroc": 0.5694005102040816,
+    "final_val_auroc": 0.5670025510204082,
+    "epochs_completed": 50
+  },
+  "test_std": {
+    "per_window": {
+      "accuracy": 0.8,
+      "auc": 0.5592984693877551,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "confusion": {
+        "tp": 0,
+        "tn": 1680,
+        "fp": 0,
+        "fn": 420
+      },
+      "best_thresh": 0.18597672879695892,
+      "acc_at_best_thresh": 0.49142857142857144,
+      "num_samples": 2100,
+      "loss": 0.4972345774823969
+    },
+    "per_video": {
+      "accuracy": 0.8,
+      "auc": 0.5598469387755102,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "confusion": {
+        "tp": 0,
+        "tn": 560,
+        "fp": 0,
+        "fn": 140
+      },
+      "best_thresh": 0.18828587234020233,
+      "acc_at_best_thresh": 0.5242857142857142,
+      "num_samples": 700
+    },
+    "num_windows": 2100,
+    "num_videos": 700,
+    "aggregation": "mean",
+    "shuffle_frames": false
+  },
+  "test_shuf": {
+    "per_window": {
+      "accuracy": 0.8,
+      "auc": 0.5593877551020409,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "confusion": {
+        "tp": 0,
+        "tn": 1680,
+        "fp": 0,
+        "fn": 420
+      },
+      "best_thresh": 0.18603651225566864,
+      "acc_at_best_thresh": 0.4919047619047619,
+      "num_samples": 2100,
+      "loss": 0.4972321689128876
+    },
+    "per_video": {
+      "accuracy": 0.8,
+      "auc": 0.5598724489795919,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "confusion": {
+        "tp": 0,
+        "tn": 560,
+        "fp": 0,
+        "fn": 140
+      },
+      "best_thresh": 0.18826937675476074,
+      "acc_at_best_thresh": 0.5228571428571429,
+      "num_samples": 700
+    },
+    "num_windows": 2100,
+    "num_videos": 700,
+    "aggregation": "mean",
+    "shuffle_frames": true
+  },
+  "wallclock": 180.13927318900824
+}

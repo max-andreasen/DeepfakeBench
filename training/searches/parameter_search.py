@@ -36,24 +36,22 @@ from torch.utils.data import DataLoader
 # ---- path setup ----
 # Both training/ and evaluation/ have a data_loader.py with DIFFERENT classes.
 # We need DeepfakeDataset (train) via train_from_config, and DeepfakeTestDataset
-# (eval) + Tester via the evaluation/ copies. Strategy: import training's
-# first so sys.modules['data_loader'] = training/data_loader.py, then load the
-# evaluation modules in isolation under distinct names via importlib.
+# (eval) + Tester via the evaluation/ copies.
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / 'training'))
 
-from train import train_from_config  # noqa: E402
-from logger import create_logger  # noqa: E402
+from train import train_from_config
+from logger import create_logger
 
 
+# --- Loads dataloaders ---
 def _load_isolated(name, path):
     spec = importlib.util.spec_from_file_location(name, str(path))
     mod = importlib.util.module_from_spec(spec)
     sys.modules[name] = mod
     spec.loader.exec_module(mod)
     return mod
-
 
 _eval_dl = _load_isolated('eval_data_loader', REPO_ROOT / 'evaluation' / 'data_loader.py')
 _eval_tester = _load_isolated('eval_tester', REPO_ROOT / 'evaluation' / 'tester.py')
@@ -62,25 +60,23 @@ Tester = _eval_tester.Tester
 
 
 # ---- search space ----
-
 def search_space(trial, model_type):
-    """Sample hparams for this trial. Returns a structured override dict that
-    build_trial_config applies onto a deepcopy of the base YAML.
-    Ranges are placeholders — tighten after the first pilot."""
-    ov = {}
+    """Creates a dict containing the search space with hyperparameters for this trial.
+    build_trial_config applies this onto a copy of the base YAML."""
+    params = {}
 
     opt_type = trial.suggest_categorical('optimizer_type', ['adamw', 'adam'])
-    ov['optimizer_type'] = opt_type
-    ov['lr'] = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
-    ov['weight_decay'] = trial.suggest_float('weight_decay', 1e-6, 1e-2, log=True)
+    params['optimizer_type'] = opt_type
+    params['lr'] = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
+    params['weight_decay'] = trial.suggest_float('weight_decay', 1e-6, 1e-2, log=True)
 
     sched = trial.suggest_categorical('lr_scheduler', ['constant', 'cosine', 'cosine_warmup'])
-    ov['lr_scheduler'] = sched
+    params['lr_scheduler'] = sched
     if sched == 'cosine_warmup':
-        ov['warmup_epochs'] = trial.suggest_int('warmup_epochs', 3, 10)
+        params['warmup_epochs'] = trial.suggest_int('warmup_epochs', 3, 10)
 
     if model_type == 'transformer':
-        ov['model'] = {
+        params['model'] = {
             'num_layers':      trial.suggest_int('num_layers', 2, 12),
             'n_heads':         trial.suggest_categorical('n_heads', [4, 8, 16]),
             'dim_feedforward': trial.suggest_categorical('dim_feedforward', [1024, 2048, 3072]),
@@ -88,18 +84,18 @@ def search_space(trial, model_type):
             'mlp_dropout':     trial.suggest_float('mlp_dropout', 0.1, 0.6),
         }
     elif model_type == 'bigru':
-        ov['model'] = {
+        params['model'] = {
             'hidden_dim':  trial.suggest_categorical('hidden_dim', [128, 256, 512, 1024]),
             'num_layers':  trial.suggest_int('gru_num_layers', 1, 4),
             'gru_dropout': trial.suggest_float('gru_dropout', 0.0, 0.5),
             'mlp_dropout': trial.suggest_float('mlp_dropout', 0.1, 0.6),
         }
     elif model_type == 'linear':
-        ov['model'] = {}  # nothing model-specific to tune
+        params['model'] = {}  # nothing model-specific to tune
     else:
         raise ValueError(f"Unknown model_type: {model_type}")
 
-    return ov
+    return params
 
 
 def build_trial_config(base_config, overrides, search_epochs, trial_dir):
@@ -123,7 +119,6 @@ def build_trial_config(base_config, overrides, search_epochs, trial_dir):
 
 
 # ---- evaluation ----
-
 def evaluate_on_split(model, config, split, logger):
     """Run Tester.evaluate on a given split. Returns result dict.
     num_workers=0 on the loader so DataLoader doesn't try to pickle an
