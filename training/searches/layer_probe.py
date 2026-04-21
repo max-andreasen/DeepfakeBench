@@ -6,13 +6,14 @@ evaluated on every CLIP layer under --embeddings-dir. For each layer:
     * evaluate on FF++ test split (standard + frame-shuffled),
     * write run_dir/results.json.
 
-After the grid, writes summary.csv and emits two PNGs:
-    * plots/auc_<model_type>.png          per-window + per-video AUC
-    * plots/temporal_gap_<model_type>.png std − shuffled per-video AUC
+After the grid, writes summary.csv and emits two PNGs per series
+(series = model_type, or model_type_<transform> when input_transform != 'none'):
+    * plots/auc_<series>.png          per-window + per-video AUC
+    * plots/temporal_gap_<series>.png std − shuffled per-video AUC
 
 Plot-only mode regenerates plots from one or more existing summary.csv
-files; with >1 distinct model_type it additionally emits
-auc_combined.png and temporal_gap_combined.png for cross-model comparison.
+files; with >1 distinct series it additionally emits
+auc_combined.png and temporal_gap_combined.png for cross-series comparison.
 
 No modifications to training/train.py, training/trainer.py,
 evaluation/test.py, or evaluation/tester.py — this is a pure orchestrator.
@@ -77,13 +78,20 @@ LAYER_ORDER = [
 ]
 
 SUMMARY_FIELDS = [
-    'layer', 'model_type', 'clip_embed_dim',
+    'layer', 'model_type', 'input_transform', 'clip_embed_dim',
     'best_val_auc',
     'test_auc_std_window', 'test_auc_std_video',
     'test_auc_shuf_window', 'test_auc_shuf_video',
     'temporal_gap_video',
     'wallclock_s',
 ]
+
+
+def series_key(row):
+    """Plot-series identity. Raw and diff runs of the same model become
+    separate lines in combined plots."""
+    transform = row.get('input_transform') or 'none'
+    return f"{row['model_type']}" if transform == 'none' else f"{row['model_type']}_{transform}"
 
 
 # ---- layer discovery + config building ----
@@ -138,6 +146,7 @@ def evaluate_on_split(model, config, split, shuffle_frames, logger):
         catalogue_file=os.path.join(root, config['catalogue_file']),
         num_frames=config['num_frames']['val'],
         split=split,
+        input_transform=config.get('input_transform', 'none'),
     )
     loader = DataLoader(
         dataset,
@@ -188,9 +197,13 @@ def summary_row_from_results(layer, model_type, payload):
     std_video = (std.get('per_video') or {}).get('auc')
     shuf_video = (shuf.get('per_video') or {}).get('auc')
     gap = (std_video - shuf_video) if (std_video is not None and shuf_video is not None) else None
+    # input_transform is captured once at payload level; fall back to the
+    # standard-eval record (defensive default for older payloads).
+    input_transform = payload.get('input_transform') or std.get('input_transform') or 'none'
     return {
         'layer': layer,
         'model_type': model_type,
+        'input_transform': input_transform,
         'clip_embed_dim': clip_embed_dim_for(layer),
         'best_val_auc': (payload.get('train') or {}).get('best_val_auroc'),
         'test_auc_std_window': (std.get('per_window') or {}).get('auc'),
@@ -211,11 +224,14 @@ def write_summary(rows, path):
 
 
 def load_summary_rows(paths):
-    numeric = [k for k in SUMMARY_FIELDS if k not in ('layer', 'model_type')]
+    numeric = [k for k in SUMMARY_FIELDS if k not in ('layer', 'model_type', 'input_transform')]
     out = []
     for p in paths:
         with open(p) as f:
             for r in csv.DictReader(f):
+                # Back-compat: rows written before input_transform existed.
+                if not r.get('input_transform'):
+                    r['input_transform'] = 'none'
                 for k in numeric:
                     v = r.get(k)
                     if v in (None, ''):
@@ -226,26 +242,28 @@ def load_summary_rows(paths):
                         except ValueError:
                             r[k] = None
                 out.append(r)
-    # Dedup on (model_type, layer), last wins — lets a fresh run override
-    # older values for the same cell when replotting.
+    # Dedup on (model_type, input_transform, layer), last wins — lets a fresh
+    # run override older values for the same cell when replotting. Distinct
+    # transforms stay separate.
     keyed = {}
     dups = []
     for r in out:
-        key = (r['model_type'], r['layer'])
+        key = (r['model_type'], r['input_transform'], r['layer'])
         if key in keyed:
             dups.append(key)
         keyed[key] = r
     if dups:
-        print(f"WARN: {len(dups)} duplicate (model_type, layer) rows "
+        print(f"WARN: {len(dups)} duplicate (model_type, input_transform, layer) rows "
               f"resolved to last-seen: {sorted(set(dups))}", file=sys.stderr)
     return list(keyed.values())
 
 
-def group_by_model(rows):
-    by_model = {}
+def group_by_series(rows):
+    """Group rows into plot series: (model_type, input_transform) combinations."""
+    by_series = {}
     for r in rows:
-        by_model.setdefault(r['model_type'], []).append(r)
-    return by_model
+        by_series.setdefault(series_key(r), []).append(r)
+    return by_series
 
 
 # ---- plotting ----
@@ -261,7 +279,7 @@ def _sort_by_layer(rows):
     return sorted(rows, key=lambda r: (key.get(r['layer'], len(LAYER_ORDER)), r['layer']))
 
 
-def plot_per_model(rows, model_type, out_path):
+def plot_per_series(rows, series_label, out_path):
     import matplotlib.pyplot as plt
     rows = _sort_by_layer(rows)
     xs = [r['layer'] for r in rows]
@@ -270,7 +288,7 @@ def plot_per_model(rows, model_type, out_path):
     ax.plot(xs, [_nan(r['test_auc_std_window']) for r in rows], marker='s', label='per-window')
     ax.set_xlabel('CLIP layer')
     ax.set_ylabel('AUC (FF++ test)')
-    ax.set_title(f"{model_type}: per-window vs per-video AUC across CLIP layers (FF++ test)")
+    ax.set_title(f"{series_label}: per-window vs per-video AUC across CLIP layers (FF++ test)")
     ax.grid(True, alpha=0.3)
     ax.legend()
     fig.tight_layout()
@@ -278,20 +296,20 @@ def plot_per_model(rows, model_type, out_path):
     plt.close(fig)
 
 
-def plot_temporal_gap(rows, model_type, out_path):
+def plot_temporal_gap_series(rows, series_label, out_path):
     import matplotlib.pyplot as plt
     rows = _sort_by_layer(rows)
     xs = [r['layer'] for r in rows]
     ys = [_nan(r['temporal_gap_video']) for r in rows]
     if all(math.isnan(y) for y in ys):
-        # No shuffled results available for this model — nothing to plot.
+        # No shuffled results available for this series — nothing to plot.
         return
     fig, ax = plt.subplots(figsize=(9, 5))
-    ax.plot(xs, ys, marker='o', label=model_type)
+    ax.plot(xs, ys, marker='o', label=series_label)
     ax.axhline(0, linestyle='--', color='gray', alpha=0.6)
     ax.set_xlabel('CLIP layer')
     ax.set_ylabel('AUC(std) − AUC(shuffled), per-video')
-    ax.set_title(f"{model_type}: temporal gap across CLIP layers (std − shuffled, per-video AUC)")
+    ax.set_title(f"{series_label}: temporal gap across CLIP layers (std − shuffled, per-video AUC)")
     ax.grid(True, alpha=0.3)
     ax.legend()
     fig.tight_layout()
@@ -299,17 +317,17 @@ def plot_temporal_gap(rows, model_type, out_path):
     plt.close(fig)
 
 
-def plot_combined_auc(rows_by_model, out_path):
+def plot_combined_auc(rows_by_series, out_path):
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots(figsize=(9, 5))
-    for mt in sorted(rows_by_model):
-        rows = _sort_by_layer(rows_by_model[mt])
+    for label in sorted(rows_by_series):
+        rows = _sort_by_layer(rows_by_series[label])
         xs = [r['layer'] for r in rows]
         ys = [_nan(r['test_auc_std_video']) for r in rows]
-        ax.plot(xs, ys, marker='o', label=mt)
+        ax.plot(xs, ys, marker='o', label=label)
     ax.set_xlabel('CLIP layer')
     ax.set_ylabel('per-video AUC (FF++ test)')
-    ax.set_title('Per-video AUC across CLIP layers, all models (FF++ test)')
+    ax.set_title('Per-video AUC across CLIP layers, all series (FF++ test)')
     ax.grid(True, alpha=0.3)
     ax.legend()
     fig.tight_layout()
@@ -317,17 +335,17 @@ def plot_combined_auc(rows_by_model, out_path):
     plt.close(fig)
 
 
-def plot_combined_gap(rows_by_model, out_path):
+def plot_combined_gap(rows_by_series, out_path):
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots(figsize=(9, 5))
     drew_any = False
-    for mt in sorted(rows_by_model):
-        rows = _sort_by_layer(rows_by_model[mt])
+    for label in sorted(rows_by_series):
+        rows = _sort_by_layer(rows_by_series[label])
         xs = [r['layer'] for r in rows]
         ys = [_nan(r['temporal_gap_video']) for r in rows]
         if all(math.isnan(y) for y in ys):
             continue
-        ax.plot(xs, ys, marker='o', label=mt)
+        ax.plot(xs, ys, marker='o', label=label)
         drew_any = True
     if not drew_any:
         plt.close(fig)
@@ -335,7 +353,7 @@ def plot_combined_gap(rows_by_model, out_path):
     ax.axhline(0, linestyle='--', color='gray', alpha=0.6)
     ax.set_xlabel('CLIP layer')
     ax.set_ylabel('AUC(std) − AUC(shuffled), per-video')
-    ax.set_title('Temporal gap across CLIP layers, all models (std − shuffled, per-video AUC)')
+    ax.set_title('Temporal gap across CLIP layers, all series (std − shuffled, per-video AUC)')
     ax.grid(True, alpha=0.3)
     ax.legend()
     fig.tight_layout()
@@ -343,14 +361,14 @@ def plot_combined_gap(rows_by_model, out_path):
     plt.close(fig)
 
 
-def emit_plots(rows_by_model, plot_dir):
+def emit_plots(rows_by_series, plot_dir):
     plot_dir.mkdir(parents=True, exist_ok=True)
-    for mt, rows in rows_by_model.items():
-        plot_per_model(rows, mt, plot_dir / f'auc_{mt}.png')
-        plot_temporal_gap(rows, mt, plot_dir / f'temporal_gap_{mt}.png')
-    if len(rows_by_model) > 1:
-        plot_combined_auc(rows_by_model, plot_dir / 'auc_combined.png')
-        plot_combined_gap(rows_by_model, plot_dir / 'temporal_gap_combined.png')
+    for label, rows in rows_by_series.items():
+        plot_per_series(rows, label, plot_dir / f'auc_{label}.png')
+        plot_temporal_gap_series(rows, label, plot_dir / f'temporal_gap_{label}.png')
+    if len(rows_by_series) > 1:
+        plot_combined_auc(rows_by_series, plot_dir / 'auc_combined.png')
+        plot_combined_gap(rows_by_series, plot_dir / 'temporal_gap_combined.png')
 
 
 # ---- main run ----
@@ -361,6 +379,9 @@ def run(args):
     with open(args.base_config) as f:
         base_config = yaml.safe_load(f)
     model_type = base_config['model_type']
+    input_transform = base_config.get('input_transform', 'none')
+    # Suffix the run dir with the transform so raw and diff runs don't collide.
+    run_tag = model_type if input_transform == 'none' else f'{model_type}_{input_transform}'
 
     layers = discover_layers(embeddings_dir, args.layers)
 
@@ -375,12 +396,12 @@ def run(args):
         out_dir_root = Path(args.out_dir).resolve()
         out_dir_root.mkdir(parents=True, exist_ok=True)
         timestamp = time.strftime('%Y-%m-%d_%H-%M-%S')
-        run_root = out_dir_root / f'{timestamp}_{model_type}'
+        run_root = out_dir_root / f'{timestamp}_{run_tag}'
         run_root.mkdir(parents=True, exist_ok=True)
         resumed = False
 
     orch_log = _make_orch_logger(str(run_root / 'orchestrator.log'))
-    orch_log.info(f"Layer probe: model_type={model_type}  layers={layers}")
+    orch_log.info(f"Layer probe: model_type={model_type}  input_transform={input_transform}  layers={layers}")
     orch_log.info(f"Base config: {args.base_config}")
     orch_log.info(f"Embeddings dir: {embeddings_dir}")
     orch_log.info(f"Run root: {run_root}" + ("  (resumed)" if resumed else ""))
@@ -418,6 +439,7 @@ def run(args):
         payload = {
             'layer': layer,
             'model_type': model_type,
+            'input_transform': input_transform,
             'train': {
                 'best_val_auroc': train_result['best_val_auroc'],
                 'final_val_auroc': train_result['final_val_auroc'],
@@ -445,7 +467,7 @@ def run(args):
         )
 
     write_summary(rows, run_root / 'summary.csv')
-    emit_plots(group_by_model(rows), run_root / 'plots')
+    emit_plots(group_by_series(rows), run_root / 'plots')
     orch_log.info(f"Wrote {run_root / 'summary.csv'}")
     orch_log.info(f"Wrote plots to {run_root / 'plots'}")
 
@@ -457,7 +479,7 @@ def replot(args):
             raise FileNotFoundError(p)
     rows = load_summary_rows(paths)
     plot_out = Path(args.plot_out_dir).resolve()
-    emit_plots(group_by_model(rows), plot_out)
+    emit_plots(group_by_series(rows), plot_out)
     print(f"Wrote plots to {plot_out}")
 
 

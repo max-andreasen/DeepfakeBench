@@ -1,0 +1,77 @@
+{
+  "timestamp": "2026-04-20T17:54:48",
+  "study_name": "linear_block16",
+  "base_config_path": "/home/max-andreasen/GitHub/DeepfakeBench/training/configs/linear_optuna_block16.yaml",
+  "model_type": "linear",
+  "cli_args": {
+    "n_trials": 75,
+    "search_epochs": 20,
+    "top_k": 5,
+    "pruner": "median",
+    "seed": 42,
+    "timeout": null,
+    "storage": "/home/max-andreasen/GitHub/DeepfakeBench/training/searches/optuna_studies.db"
+  },
+  "sampler": "TPESampler(multivariate=True)",
+  "search_space": {
+    "common": {
+      "optimizer_type": {
+        "type": "categorical",
+        "choices": [
+          "adamw",
+          "adam"
+        ]
+      },
+      "lr": {
+        "type": "float",
+        "range": [
+          1e-05,
+          0.01
+        ],
+        "log": true
+      },
+      "weight_decay": {
+        "type": "float",
+        "range": [
+          1e-06,
+          0.01
+        ],
+        "log": true
+      },
+      "lr_scheduler": {
+        "type": "categorical",
+        "choices": [
+          "constant",
+          "cosine",
+          "cosine_warmup"
+        ]
+      },
+      "warmup_epochs": {
+        "type": "int",
+        "range": [
+          3,
+          10
+        ],
+        "conditional_on": "lr_scheduler=='cosine_warmup'"
+      }
+    },
+    "model": {
+      "mlp_hidden_dim": {
+        "type": "categorical",
+        "choices": [
+          128,
+          256,
+          512,
+          1024
+        ]
+      },
+      "mlp_dropout": {
+        "type": "float",
+        "range": [
+          0.1,
+          0.6
+        ]
+      }
+    }
+  }
+}

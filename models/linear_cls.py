@@ -1,3 +1,4 @@
+from numpy.core.fromnumeric import clip
 import torch
 import torch.nn as nn
 
@@ -12,7 +13,7 @@ Output shape: (Batch, num_classes)
 """
 
 class LinearClassifier(nn.Module):
-    def __init__(self, clip_embed_dim=768, num_classes=2):
+    def __init__(self, clip_embed_dim=1024, num_classes=2, mlp_dropout=0.2, mlp_hidden_dim=512):
         super().__init__()
 
         # just a single linear layer from embedding dim → num_classes
@@ -20,28 +21,18 @@ class LinearClassifier(nn.Module):
         #
         # Linear stack shows better performance
         self.classifier = nn.Sequential(
-            nn.Linear(clip_embed_dim, 512),
+            nn.Linear(clip_embed_dim, mlp_hidden_dim),
             nn.GELU(),
-            nn.Dropout(0.4),
-
-            nn.Linear(512, 256),
-            nn.GELU(),
-            nn.Dropout(0.4),
-
-            nn.Linear(256, 128),
-            nn.GELU(),
-            nn.Dropout(0.4),
-
-            nn.Linear(128, 64),
-            nn.GELU(),
-            nn.Dropout(0.4),
-
-            nn.Linear(64, num_classes) # num_classes is real/fake = 2.
+            nn.Dropout(mlp_dropout),
+            nn.Linear(mlp_hidden_dim, num_classes),
         )
 
     def forward(self, x):
         # x: (B, T, D)
-        # average all frame embeddings into one video-level vector
-        x = x.mean(dim=1)   # (B, D)
+        # Mean-of-absolute pool so the linear probe works for both raw embeddings
+        # and diff sequences. (Plain mean telescopes under diff: the average of
+        # [x_1 - x_0, ..., x_T - x_{T-1}] collapses to (x_T - x_0)/(T-1), which
+        # destroys the motion signal. abs().mean() preserves per-channel magnitude.)
+        x = x.abs().mean(dim=1)   # (B, D)
 
         return self.classifier(x)  # (B, num_classes)

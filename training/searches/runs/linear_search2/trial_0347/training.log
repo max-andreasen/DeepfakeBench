@@ -1,0 +1,98 @@
+2026-04-21 14:32:20,885 - INFO - CLIP embeddings: clip/embeddings/probing/ViT-L-14-336-quickgelu/block_16/catalogue.csv  (dim=1024)
+2026-04-21 14:32:20,885 - INFO - Data split: datasets/splits/FaceForensics++.csv
+2026-04-21 14:32:20,885 - INFO -   train: 32 frames/video, batch_size=96
+2026-04-21 14:32:20,885 - INFO -   val:   32 frames/video, batch_size=64
+2026-04-21 14:32:20,885 - INFO -   input_transform: none
+2026-04-21 14:32:20,885 - INFO - Config: {'log_dir': '/home/max-andreasen/GitHub/DeepfakeBench/training/searches/runs/linear_search2/trial_0347', 'model_type': 'linear', 'model': {'transformer': {'clip_embed_dim': 1024, 'num_frames': 32, 'num_classes': 2, 'num_layers': 8, 'n_heads': 8, 'dim_feedforward': 3072, 'attn_dropout': 0.1, 'mlp_dropout': 0.4}, 'linear': {'clip_embed_dim': 1024, 'num_classes': 2, 'mlp_hidden_dim': 2048, 'mlp_dropout': 0.25313295375581363}, 'bigru': {'clip_embed_dim': 1024, 'hidden_dim': 512, 'num_layers': 2, 'gru_dropout': 0.1, 'mlp_dropout': 0.4, 'num_classes': 2}}, 'root_dir': '/home/max-andreasen/GitHub/DeepfakeBench', 'split_file': 'datasets/splits/FaceForensics++.csv', 'catalogue_file': 'clip/embeddings/probing/ViT-L-14-336-quickgelu/block_16/catalogue.csv', 'compression': 'c23', 'batchSize': {'train': 96, 'val': 64}, 'workers': 4, 'num_frames': {'train': 32, 'val': 32}, 'input_transform': 'none', 'resolution': 256, 'save_ckpt': True, 'save_feat': False, 'optimizer': {'type': 'adamw', 'adam': {'lr': 2e-05, 'beta1': 0.9, 'beta2': 0.999, 'eps': 1e-08, 'weight_decay': 2e-05, 'amsgrad': False}, 'adamw': {'lr': 0.014819021239219769, 'beta1': 0.9, 'beta2': 0.999, 'eps': 1e-08, 'weight_decay': 2e-05}, 'sgd': {'lr': 2e-05, 'momentum': 0.9, 'weight_decay': 0.0005}}, 'lr_scheduler': 'constant', 'step_size': 10, 'step_gamma': 0.1, 'warmup_epochs': 5, 'num_epochs': 25, 'start_epoch': 0, 'save_epoch': 1, 'rec_iter': 100, 'logdir': './logs', 'seed': 1024, 'metric_scoring': 'auc', 'all_dataset': ['FaceForensics++', 'FF-F2F', 'FF-DF', 'FF-FS', 'FF-NT', 'FaceShifter', 'DeepFakeDetection', 'Celeb-DF-v1', 'Celeb-DF-v2', 'DFDCP', 'DFDC', 'DeeperForensics-1.0', 'UADFV', 'stargan'], 'train_dataset': ['FaceForensics++'], 'val_dataset': ['FaceForensics++'], 'label_dict': {'DFD_fake': 1, 'DFD_real': 0, 'FF-SH': 1, 'FF-F2F': 1, 'FF-DF': 1, 'FF-FS': 1, 'FF-NT': 1, 'FF-FH': 1, 'FF-real': 0, 'CelebDFv1_real': 0, 'CelebDFv1_fake': 1, 'CelebDFv2_real': 0, 'CelebDFv2_fake': 1, 'DFDCP_Real': 0, 'DFDCP_FakeA': 1, 'DFDCP_FakeB': 1, 'DFDC_Fake': 1, 'DFDC_Real': 0, 'DF_fake': 1, 'DF_real': 0, 'UADFV_Fake': 1, 'UADFV_Real': 0, '0_real': 0, '1_fake': 1, 'real': 0, 'fake': 1}, 'device': 'cuda', 'cuda': True, 'cudnn': True}
+2026-04-21 14:32:23,132 - INFO - Epoch [0]: Loss: 0.8011877819111473
+2026-04-21 14:32:23,749 - INFO - --- Validation ---
+2026-04-21 14:32:23,750 - INFO - Epoch [0]: Accuracy: 0.800000011920929
+2026-04-21 14:32:23,753 - INFO - Epoch [0]: AUROC: 0.6799489795918368
+2026-04-21 14:32:23,753 - INFO - Epoch [0]: Accuracy@best_thresh=0.095: 0.6000
+2026-04-21 14:32:25,943 - INFO - Epoch [1]: Loss: 0.5239141810881464
+2026-04-21 14:32:26,571 - INFO - --- Validation ---
+2026-04-21 14:32:26,571 - INFO - Epoch [1]: Accuracy: 0.800000011920929
+2026-04-21 14:32:26,574 - INFO - Epoch [1]: AUROC: 0.7828316326530612
+2026-04-21 14:32:26,574 - INFO - Epoch [1]: Accuracy@best_thresh=0.235: 0.7600
+2026-04-21 14:32:28,765 - INFO - Epoch [2]: Loss: 0.46349752419873286
+2026-04-21 14:32:29,390 - INFO - --- Validation ---
+2026-04-21 14:32:29,390 - INFO - Epoch [2]: Accuracy: 0.8514285683631897
+2026-04-21 14:32:29,392 - INFO - Epoch [2]: AUROC: 0.8794387755102041
+2026-04-21 14:32:29,393 - INFO - Epoch [2]: Accuracy@best_thresh=0.425: 0.8314
+2026-04-21 14:32:31,595 - INFO - Epoch [3]: Loss: 0.39627681907854584
+2026-04-21 14:32:32,240 - INFO - --- Validation ---
+2026-04-21 14:32:32,241 - INFO - Epoch [3]: Accuracy: 0.8585714101791382
+2026-04-21 14:32:32,243 - INFO - Epoch [3]: AUROC: 0.8942474489795919
+2026-04-21 14:32:32,243 - INFO - Epoch [3]: Accuracy@best_thresh=0.451: 0.8400
+2026-04-21 14:32:34,431 - INFO - Epoch [4]: Loss: 0.40335760736151743
+2026-04-21 14:32:35,073 - INFO - --- Validation ---
+2026-04-21 14:32:35,073 - INFO - Epoch [4]: Accuracy: 0.8728571534156799
+2026-04-21 14:32:35,075 - INFO - Epoch [4]: AUROC: 0.9053188775510205
+2026-04-21 14:32:35,076 - INFO - Epoch [4]: Accuracy@best_thresh=0.186: 0.7829
+2026-04-21 14:32:37,281 - INFO - Epoch [5]: Loss: 0.33880198825346797
+2026-04-21 14:32:37,916 - INFO - --- Validation ---
+2026-04-21 14:32:37,916 - INFO - Epoch [5]: Accuracy: 0.831428587436676
+2026-04-21 14:32:37,919 - INFO - Epoch [5]: AUROC: 0.9140561224489796
+2026-04-21 14:32:37,919 - INFO - Epoch [5]: Accuracy@best_thresh=0.520: 0.8414
+2026-04-21 14:32:40,129 - INFO - Epoch [6]: Loss: 0.2955438526053178
+2026-04-21 14:32:40,767 - INFO - --- Validation ---
+2026-04-21 14:32:40,768 - INFO - Epoch [6]: Accuracy: 0.800000011920929
+2026-04-21 14:32:40,772 - INFO - Epoch [6]: AUROC: 0.9160204081632652
+2026-04-21 14:32:40,773 - INFO - Epoch [6]: Accuracy@best_thresh=0.576: 0.8257
+2026-04-21 14:32:42,970 - INFO - Epoch [7]: Loss: 0.30093108274434743
+2026-04-21 14:32:43,620 - INFO - --- Validation ---
+2026-04-21 14:32:43,621 - INFO - Epoch [7]: Accuracy: 0.8728571534156799
+2026-04-21 14:32:43,623 - INFO - Epoch [7]: AUROC: 0.9172321428571428
+2026-04-21 14:32:43,623 - INFO - Epoch [7]: Accuracy@best_thresh=0.208: 0.8443
+2026-04-21 14:32:45,841 - INFO - Epoch [8]: Loss: 0.2833803872528829
+2026-04-21 14:32:46,480 - INFO - --- Validation ---
+2026-04-21 14:32:46,481 - INFO - Epoch [8]: Accuracy: 0.8557142615318298
+2026-04-21 14:32:46,485 - INFO - Epoch [8]: AUROC: 0.9207908163265306
+2026-04-21 14:32:46,485 - INFO - Epoch [8]: Accuracy@best_thresh=0.090: 0.8486
+2026-04-21 14:32:48,703 - INFO - Epoch [9]: Loss: 0.27720015299947637
+2026-04-21 14:32:49,346 - INFO - --- Validation ---
+2026-04-21 14:32:49,347 - INFO - Epoch [9]: Accuracy: 0.8399999737739563
+2026-04-21 14:32:49,349 - INFO - Epoch [9]: AUROC: 0.9214795918367347
+2026-04-21 14:32:49,349 - INFO - Epoch [9]: Accuracy@best_thresh=0.034: 0.8457
+2026-04-21 14:32:51,553 - INFO - Epoch [10]: Loss: 0.326956123505768
+2026-04-21 14:32:52,200 - INFO - --- Validation ---
+2026-04-21 14:32:52,200 - INFO - Epoch [10]: Accuracy: 0.8857142925262451
+2026-04-21 14:32:52,202 - INFO - Epoch [10]: AUROC: 0.9212627551020408
+2026-04-21 14:32:52,203 - INFO - Epoch [10]: Accuracy@best_thresh=0.319: 0.8600
+2026-04-21 14:32:54,410 - INFO - Epoch [11]: Loss: 0.2792093420499249
+2026-04-21 14:32:55,048 - INFO - --- Validation ---
+2026-04-21 14:32:55,048 - INFO - Epoch [11]: Accuracy: 0.8814285397529602
+2026-04-21 14:32:55,052 - INFO - Epoch [11]: AUROC: 0.9241198979591837
+2026-04-21 14:32:55,053 - INFO - Epoch [11]: Accuracy@best_thresh=0.303: 0.8600
+2026-04-21 14:32:57,267 - INFO - Epoch [12]: Loss: 0.26226724135248286
+2026-04-21 14:32:57,898 - INFO - --- Validation ---
+2026-04-21 14:32:57,899 - INFO - Epoch [12]: Accuracy: 0.8728571534156799
+2026-04-21 14:32:57,901 - INFO - Epoch [12]: AUROC: 0.9244770408163265
+2026-04-21 14:32:57,901 - INFO - Epoch [12]: Accuracy@best_thresh=0.148: 0.8600
+2026-04-21 14:33:00,097 - INFO - Epoch [13]: Loss: 0.2496718693720667
+2026-04-21 14:33:00,726 - INFO - --- Validation ---
+2026-04-21 14:33:00,726 - INFO - Epoch [13]: Accuracy: 0.8799999952316284
+2026-04-21 14:33:00,728 - INFO - Epoch [13]: AUROC: 0.9261989795918367
+2026-04-21 14:33:00,729 - INFO - Epoch [13]: Accuracy@best_thresh=0.175: 0.8714
+2026-04-21 14:33:02,919 - INFO - Epoch [14]: Loss: 0.23846987713324397
+2026-04-21 14:33:03,545 - INFO - --- Validation ---
+2026-04-21 14:33:03,546 - INFO - Epoch [14]: Accuracy: 0.831428587436676
+2026-04-21 14:33:03,548 - INFO - Epoch [14]: AUROC: 0.9209566326530612
+2026-04-21 14:33:03,549 - INFO - Epoch [14]: Accuracy@best_thresh=0.312: 0.8071
+2026-04-21 14:33:05,764 - INFO - Epoch [15]: Loss: 0.2762266132784517
+2026-04-21 14:33:06,385 - INFO - --- Validation ---
+2026-04-21 14:33:06,386 - INFO - Epoch [15]: Accuracy: 0.845714271068573
+2026-04-21 14:33:06,388 - INFO - Epoch [15]: AUROC: 0.9193877551020408
+2026-04-21 14:33:06,388 - INFO - Epoch [15]: Accuracy@best_thresh=0.013: 0.8071
+2026-04-21 14:33:08,595 - INFO - Epoch [16]: Loss: 0.27243029326200485
+2026-04-21 14:33:09,234 - INFO - --- Validation ---
+2026-04-21 14:33:09,235 - INFO - Epoch [16]: Accuracy: 0.8671428561210632
+2026-04-21 14:33:09,239 - INFO - Epoch [16]: AUROC: 0.9228443877551019
+2026-04-21 14:33:09,240 - INFO - Epoch [16]: Accuracy@best_thresh=0.059: 0.8171
+2026-04-21 14:33:11,460 - INFO - Epoch [17]: Loss: 0.23937724138561048
+2026-04-21 14:33:12,096 - INFO - --- Validation ---
+2026-04-21 14:33:12,097 - INFO - Epoch [17]: Accuracy: 0.8728571534156799
+2026-04-21 14:33:12,101 - INFO - Epoch [17]: AUROC: 0.9265178571428572
+2026-04-21 14:33:12,102 - INFO - Epoch [17]: Accuracy@best_thresh=0.093: 0.8629
+2026-04-21 14:33:12,141 - INFO - Saved run config to /home/max-andreasen/GitHub/DeepfakeBench/training/searches/runs/linear_search2/trial_0347/run_config.json
+2026-04-21 14:33:12,149 - INFO - Training pruned at epoch 18.

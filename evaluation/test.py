@@ -105,14 +105,18 @@ def load_trained_model(trained_model_dir, root_dir=''):
     return model, run_config
 
 
-def build_test_loader(config):
-    """Builds the data loader for the test set, preparing the data for inference."""
+def build_test_loader(config, input_transform='none'):
+    """Builds the data loader for the test set, preparing the data for inference.
+    input_transform must match what the model was trained with (read from
+    run_config.json); otherwise a diff-trained model gets raw embeddings at
+    test time and silently collapses."""
 
     root = config.get('root_dir', '')
     dataset = DeepfakeTestDataset(
         split_file=os.path.join(root, config['split_file']),
         catalogue_file=os.path.join(root, config['catalogue_file']),
         num_frames=config['num_frames'],
+        input_transform=input_transform,
     )
     loader = DataLoader(
         dataset,
@@ -149,7 +153,11 @@ if __name__ == '__main__':
     n_params = sum(p.numel() for p in model.parameters())
     logger.info(f"Parameters: {n_params:,}")
 
-    test_loader = build_test_loader(config)
+    # Pull input_transform from the trained-model metadata so the model sees
+    # the same kind of input it was trained on (raw vs diff).
+    trained_transform = run_config.get('input_transform', 'none')
+    logger.info(f"input_transform (from run_config): {trained_transform}")
+    test_loader = build_test_loader(config, input_transform=trained_transform)
     test_dataset = test_loader.dataset
     assert isinstance(test_dataset, DeepfakeTestDataset)
     logger.info(f"Total batches: {len(test_loader)}  (test videos: {len(test_dataset)})")

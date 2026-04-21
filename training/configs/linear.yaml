@@ -37,6 +37,9 @@ compression: c23 # compression-level for videos
 batchSize: { "train": 96, "val": 64 }
 workers: 4 # number of data loading workers
 num_frames: { "train": 32, "val": 32 } # number of frames to use per video in training and testing
+# Temporal input transform applied to the T-axis of CLIP embedding sequences.
+# 'none' = raw embeddings, 'diff' = x_t - x_{t-1} (T shrinks by 1).
+input_transform: none
 resolution: 256 # resolution of output image to network
 save_ckpt: false # whether to save checkpoint
 save_feat: false # whether to save features

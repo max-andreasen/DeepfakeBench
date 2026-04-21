@@ -23,8 +23,10 @@ import copy
 import gc
 import importlib.util
 import json
+import logging
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import optuna
@@ -60,38 +62,80 @@ Tester = _eval_tester.Tester
 
 
 # ---- search space ----
+# Per-model optimizer / scheduler choices. Narrowed from the original universal
+# lists based on top-10 distributions from the first-round studies:
+#   - transformer top-10: adam 10/10; schedulers mixed → keep all three
+#   - bigru      top-10: adam/adamw mix; cosine_warmup never won → drop
+#   - linear     top-10: adamw 10/10 + cosine_warmup 10/10 → pin both
+# Kept as categoricals even when single-valued so Optuna still logs the choice.
+OPT_CHOICES = {
+    'transformer': ['adam'],
+    'bigru':       ['adam', 'adamw'],
+    'linear':      ['adamw'],
+}
+SCHED_CHOICES = {
+    'transformer': ['constant', 'cosine', 'cosine_warmup'],
+    'bigru':       ['constant', 'cosine'],
+    'linear':      ['constant', 'cosine_warmup'],
+}
+
+
+CLIP_LAYER_CHOICES = ['block_12', 'block_16', 'block_20', 'pre_proj']
+CLIP_CATALOGUE_TEMPLATE = 'clip/embeddings/probing/ViT-L-14-336-quickgelu/{layer}/catalogue.csv'
+
+
 def search_space(trial, model_type):
     """Creates a dict containing the search space with hyperparameters for this trial.
     build_trial_config applies this onto a copy of the base YAML."""
     params = {}
 
-    opt_type = trial.suggest_categorical('optimizer_type', ['adamw', 'adam'])
-    params['optimizer_type'] = opt_type
-    params['lr'] = trial.suggest_float('lr', 1e-5, 1e-2, log=True)
-    params['weight_decay'] = trial.suggest_float('weight_decay', 1e-6, 1e-2, log=True)
+    # CLIP layer: late blocks + the pre-projection representation. All four
+    # are 1024-dim so clip_embed_dim stays consistent; only the catalogue
+    # path changes per trial.
+    params['clip_layer'] = trial.suggest_categorical('clip_layer', CLIP_LAYER_CHOICES)
 
-    sched = trial.suggest_categorical('lr_scheduler', ['constant', 'cosine', 'cosine_warmup'])
+    opt_type = trial.suggest_categorical('optimizer_type', OPT_CHOICES[model_type])
+    params['optimizer_type'] = opt_type
+
+    sched = trial.suggest_categorical('lr_scheduler', SCHED_CHOICES[model_type])
     params['lr_scheduler'] = sched
     if sched == 'cosine_warmup':
-        params['warmup_epochs'] = trial.suggest_int('warmup_epochs', 3, 10)
+        params['warmup_epochs'] = trial.suggest_int('warmup_epochs', 4, 14)
 
+    # lr/weight_decay ranges are model-specific: the linear probe converges
+    # near 1e-2, while transformer/BiGRU live in 1e-4..1e-3. Using a shared
+    # [1e-5, 1e-2] range wastes budget for all three.
     if model_type == 'transformer':
+        params['lr']           = trial.suggest_float('lr', 0.00001, 0.001, log=True)
+        params['weight_decay'] = trial.suggest_float('weight_decay', 1e-6, 1e-2, log=True)
         params['model'] = {
-            'num_layers':      trial.suggest_int('num_layers', 2, 12),
-            'n_heads':         trial.suggest_categorical('n_heads', [4, 8, 16]),
-            'dim_feedforward': trial.suggest_categorical('dim_feedforward', [1024, 2048, 3072]),
-            'attn_dropout':    trial.suggest_float('attn_dropout', 0.0, 0.5),
+            'num_layers':      trial.suggest_int('num_layers', 6, 16),
+            'n_heads':         trial.suggest_categorical('n_heads', [2, 4, 8, 16]),
+            'dim_feedforward': trial.suggest_categorical('dim_feedforward', [256, 512, 1024, 2048]),
+            'attn_dropout':    trial.suggest_float('attn_dropout', 0.0, 0.6),
             'mlp_dropout':     trial.suggest_float('mlp_dropout', 0.1, 0.6),
+            'mlp_hidden_dim':  trial.suggest_categorical('mlp_hidden_dim', [64, 128, 256, 512, 1024]),
         }
     elif model_type == 'bigru':
+        params['lr'] = trial.suggest_float('lr', 1e-5, 5e-3, log=True)
+        # weight_decay pinned in the base YAML — the first-round study showed
+        # near-zero correlation with AUC (+0.11) and the top-3 trials all used
+        # WD < 1.3e-5. Not worth the search dimension.
         params['model'] = {
-            'hidden_dim':  trial.suggest_categorical('hidden_dim', [128, 256, 512, 1024]),
-            'num_layers':  trial.suggest_int('gru_num_layers', 1, 4),
-            'gru_dropout': trial.suggest_float('gru_dropout', 0.0, 0.5),
-            'mlp_dropout': trial.suggest_float('mlp_dropout', 0.1, 0.6),
+            'hidden_dim':  trial.suggest_categorical('hidden_dim', [256, 512, 2048]),
+            'num_layers':  trial.suggest_int('gru_num_layers', 2, 5),
+            'gru_dropout': trial.suggest_float('gru_dropout', 0.0, 0.4),
+            'mlp_dropout': trial.suggest_float('mlp_dropout', 0.0, 0.4),
+            'mlp_hidden_dim': trial.suggest_categorical('mlp_hidden_dim', [256, 512, 1024]),
         }
     elif model_type == 'linear':
-        params['model'] = {}  # nothing model-specific to tune
+        params['lr'] = trial.suggest_float('lr', 0.005, 0.1, log=True)
+        # weight_decay pinned in the base YAML — top-5 clustered at WD ≈ 2e-5.
+        # Correlation with AUC was +0.35 (weak); not worth the search dimension.
+        params['model'] = {
+            'mlp_hidden_dim': trial.suggest_categorical('mlp_hidden_dim', [512, 1024, 2048]),
+            'mlp_dropout':    trial.suggest_float('mlp_dropout', 0.0, 0.4),
+        }
     else:
         raise ValueError(f"Unknown model_type: {model_type}")
 
@@ -102,10 +146,14 @@ def build_trial_config(base_config, overrides, search_epochs, trial_dir):
     cfg = copy.deepcopy(base_config)
     model_type = cfg['model_type']
 
+    if 'clip_layer' in overrides:
+        cfg['catalogue_file'] = CLIP_CATALOGUE_TEMPLATE.format(layer=overrides['clip_layer'])
+
     opt_type = overrides['optimizer_type']
     cfg['optimizer']['type'] = opt_type
     cfg['optimizer'][opt_type]['lr'] = overrides['lr']
-    cfg['optimizer'][opt_type]['weight_decay'] = overrides['weight_decay']
+    if 'weight_decay' in overrides:
+        cfg['optimizer'][opt_type]['weight_decay'] = overrides['weight_decay']
 
     cfg['lr_scheduler'] = overrides['lr_scheduler']
     if 'warmup_epochs' in overrides:
@@ -129,6 +177,7 @@ def evaluate_on_split(model, config, split, logger):
         catalogue_file=os.path.join(root, config['catalogue_file']),
         num_frames=config['num_frames']['val'],
         split=split,
+        input_transform=config.get('input_transform', 'none'),
     )
     loader = DataLoader(
         dataset,
@@ -157,16 +206,12 @@ def prune_checkpoints(study, top_k, study_dir):
 
 
 # ---- objective ----
-
 def objective(trial, base_config, study_dir, search_epochs, top_k):
     trial_dir = str(Path(study_dir) / f'trial_{trial.number:04d}')
     os.makedirs(trial_dir, exist_ok=True)
 
     overrides = search_space(trial, base_config['model_type'])
     config = build_trial_config(base_config, overrides, search_epochs, trial_dir)
-
-    with open(Path(trial_dir) / 'config.json', 'w') as f:
-        json.dump(config, f, indent=2)
 
     # train — per-epoch pruning via train_from_config
     try:
@@ -204,8 +249,101 @@ def _free_gpu():
         torch.cuda.empty_cache()
 
 
-# ---- study setup ----
+# ---- post-study reporting ----
+PLOT_VALUE_FLOOR = 0.7
+"""Trials with value < PLOT_VALUE_FLOOR are dropped from param_importances,
+parallel_coordinate, and slice_plot. A single collapsed trial (e.g. AUC~0.2)
+compresses the color/axis scale so the bulk of good trials overlap into one
+visual band. optimization_history keeps all trials so spike-downs stay visible."""
 
+
+def _study_filtered_by_value(study, min_value):
+    """Build an in-memory copy of `study` containing only COMPLETE trials
+    with value >= min_value. Used solely for plotting — the original study
+    (including failed/collapsed trials) is still persisted in SQLite and
+    all_trials.csv."""
+    filtered = optuna.create_study(
+        study_name=study.study_name + '__plot_filter',
+        sampler=optuna.samplers.RandomSampler(),  # unused, we only call .trials
+        direction='maximize',
+    )
+    keep = [t for t in study.trials
+            if t.state == optuna.trial.TrialState.COMPLETE
+            and t.value is not None
+            and t.value >= min_value]
+    filtered.add_trials(keep)
+    return filtered
+
+
+def generate_report(study, study_dir):
+    """Write study artifacts after study.optimize() completes:
+    - all_trials.csv   : one row per trial (params, value, state, duration)
+    - best_config.json : full merged config of the winner
+    - summary.md       : top-5 table + state counts + wall-clock
+    - plots/*.html     : Optuna's optimization_history, param_importances,
+                         parallel_coordinate, slice_plot
+    Each artifact is best-effort; a failure in one doesn't block the others."""
+    study_dir = Path(study_dir)
+
+    study.trials_dataframe().to_csv(study_dir / 'all_trials.csv', index=False)
+
+    best_trial = study.best_trial
+    best_cfg_src = study_dir / f'trial_{best_trial.number:04d}' / 'run_config.json'
+    if best_cfg_src.exists():
+        with open(best_cfg_src) as f:
+            best_cfg = json.load(f)
+        with open(study_dir / 'best_config.json', 'w') as f:
+            json.dump(best_cfg, f, indent=2)
+
+    completed = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+    pruned = [t for t in study.trials if t.state == optuna.trial.TrialState.PRUNED]
+    failed = [t for t in study.trials if t.state == optuna.trial.TrialState.FAIL]
+    completed.sort(key=lambda t: (t.value if t.value is not None else -float('inf')), reverse=True)
+    top10 = completed[:10]
+    total_wall_s = sum((t.duration.total_seconds() for t in study.trials if t.duration is not None), 0.0)
+
+    lines = [
+        f"# Study: {study.study_name}",
+        "",
+        f"- Total trials: {len(study.trials)}",
+        f"- Completed: {len(completed)}",
+        f"- Pruned: {len(pruned)}",
+        f"- Failed: {len(failed)}",
+        f"- Wall-clock: {total_wall_s/3600:.2f} h",
+        "",
+        "## Top 10",
+        "",
+        "| Rank | Trial | Value | Params |",
+        "| --- | --- | --- | --- |",
+    ]
+    for i, t in enumerate(top10, 1):
+        params_str = ", ".join(f"{k}={v}" for k, v in t.params.items())
+        lines.append(f"| {i} | {t.number} | {t.value:.4f} | {params_str} |")
+    (study_dir / 'summary.md').write_text("\n".join(lines) + "\n")
+
+    try:
+        import optuna.visualization as vis
+    except ImportError:
+        print("[warn] plotly/optuna.visualization not available; skipping HTML plots")
+        return
+
+    plots_dir = study_dir / 'plots'
+    plots_dir.mkdir(exist_ok=True)
+    plot_study = _study_filtered_by_value(study, PLOT_VALUE_FLOOR)
+    plot_specs = [
+        ('optimization_history', vis.plot_optimization_history,  study),
+        ('param_importances',    vis.plot_param_importances,     plot_study),
+        ('parallel_coordinate',  vis.plot_parallel_coordinate,   plot_study),
+        ('slice_plot',           vis.plot_slice,                 plot_study),
+    ]
+    for name, fn, src in plot_specs:
+        try:
+            fn(src).write_html(str(plots_dir / f'{name}.html'))
+        except Exception as e:
+            print(f"[warn] {name} plot failed: {e}")
+
+
+# ---- study setup ----
 def build_pruner(name):
     if name == 'median':
         return optuna.pruners.MedianPruner(n_startup_trials=10, n_warmup_steps=5)
@@ -214,6 +352,88 @@ def build_pruner(name):
     if name == 'none':
         return optuna.pruners.NopPruner()
     raise ValueError(f"Unknown pruner: {name}")
+
+
+# ---- study-level logging & run_config ----
+def setup_study_logger(study_dir):
+    """File-only logger at <study_dir>/study.log. Stdout stays owned by
+    the tqdm progress bar + per-trial print(), so nothing duplicates."""
+    logger = logging.getLogger("optuna_search")
+    for h in list(logger.handlers):
+        logger.removeHandler(h)
+        h.close()
+    logger.setLevel(logging.INFO)
+    fh = logging.FileHandler(str(Path(study_dir) / 'study.log'))
+    fh.setFormatter(logging.Formatter("%(asctime)s - %(message)s"))
+    logger.addHandler(fh)
+    logger.propagate = False
+    return logger
+
+
+def describe_search_space(model_type):
+    """Human-readable snapshot of the search space for a given model_type.
+    Kept in sync with search_space() by hand — update both together."""
+    space = {
+        'common': {
+            'clip_layer':     {'type': 'categorical', 'choices': list(CLIP_LAYER_CHOICES)},
+            'optimizer_type': {'type': 'categorical', 'choices': list(OPT_CHOICES[model_type])},
+            'lr_scheduler':   {'type': 'categorical', 'choices': list(SCHED_CHOICES[model_type])},
+            'warmup_epochs':  {'type': 'int', 'range': [4, 14], 'conditional_on': "lr_scheduler=='cosine_warmup'"},
+        },
+    }
+    if model_type == 'transformer':
+        space['common']['lr']           = {'type': 'float', 'range': [1e-5, 1e-3], 'log': True}
+        space['common']['weight_decay'] = {'type': 'float', 'range': [1e-6, 1e-2], 'log': True}
+        space['model'] = {
+            'num_layers':     {'type': 'int', 'range': [6, 16]},
+            'n_heads':        {'type': 'categorical', 'choices': [2, 4, 8, 16]},
+            'dim_feedforward':{'type': 'categorical', 'choices': [256, 512, 1024, 2048]},
+            'attn_dropout':   {'type': 'float', 'range': [0.0, 0.6]},
+            'mlp_dropout':    {'type': 'float', 'range': [0.1, 0.6]},
+            'mlp_hidden_dim': {'type': 'categorical', 'choices': [64, 128, 256, 512, 1024]},
+        }
+    elif model_type == 'bigru':
+        space['common']['lr'] = {'type': 'float', 'range': [1e-5, 5e-3], 'log': True}
+        # weight_decay intentionally absent — pinned in base YAML.
+        space['model'] = {
+            'hidden_dim':     {'type': 'categorical', 'choices': [256, 512, 2048]},
+            'num_layers':     {'type': 'int', 'range': [2, 5]},
+            'gru_dropout':    {'type': 'float', 'range': [0.0, 0.4]},
+            'mlp_dropout':    {'type': 'float', 'range': [0.0, 0.4]},
+            'mlp_hidden_dim': {'type': 'categorical', 'choices': [256, 512, 1024]},
+        }
+    elif model_type == 'linear':
+        space['common']['lr'] = {'type': 'float', 'range': [5e-3, 1e-1], 'log': True}
+        # weight_decay intentionally absent — pinned in base YAML.
+        space['model'] = {
+            'mlp_hidden_dim': {'type': 'categorical', 'choices': [512, 1024, 2048]},
+            'mlp_dropout':    {'type': 'float', 'range': [0.0, 0.4]},
+        }
+    return space
+
+
+def save_search_run_config(study_dir, args, base_config):
+    """Persist the search's CLI args + search space snapshot for reproducibility.
+    Written once at study start; separate from per-trial config.json."""
+    run_config = {
+        'timestamp': datetime.now().isoformat(timespec='seconds'),
+        'study_name': args.study_name,
+        'base_config_path': os.path.abspath(args.base_config),
+        'model_type': base_config['model_type'],
+        'cli_args': {
+            'n_trials':      args.n_trials,
+            'search_epochs': args.search_epochs,
+            'top_k':         args.top_k,
+            'pruner':        args.pruner,
+            'seed':          args.seed,
+            'timeout':       args.timeout,
+            'storage':       args.storage,
+        },
+        'sampler':      'TPESampler(multivariate=True)',
+        'search_space': describe_search_space(base_config['model_type']),
+    }
+    with open(Path(study_dir) / 'run_config.json', 'w') as f:
+        json.dump(run_config, f, indent=2)
 
 
 def main():
@@ -243,6 +463,21 @@ def main():
     study_dir = REPO_ROOT / 'training' / 'searches' / 'runs' / args.study_name
     study_dir.mkdir(parents=True, exist_ok=True)
 
+    # Silence Optuna's per-trial INFO line ("[I ...] Trial N finished...") —
+    # we emit a compact equivalent in _trial_callback below, and tqdm shows
+    # the bar. Keep WARNING+ so real problems still surface.
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+    study_logger = setup_study_logger(str(study_dir))
+    save_search_run_config(str(study_dir), args, base_config)
+
+    study_logger.info(f"=== Starting study '{args.study_name}' ===")
+    study_logger.info(f"CLI args: {vars(args)}")
+    study_logger.info(f"base_config: {os.path.abspath(args.base_config)}")
+    study_logger.info(f"model_type: {base_config['model_type']}")
+    study_logger.info(f"catalogue_file: {base_config.get('catalogue_file')}")
+    study_logger.info(f"input_transform: {base_config.get('input_transform', 'none')}")
+
     pruner = build_pruner(args.pruner)
     sampler = optuna.samplers.TPESampler(multivariate=True, seed=args.seed)
 
@@ -256,19 +491,29 @@ def main():
         load_if_exists=True,
     )
 
+    def _trial_callback(study, trial):
+        dur = trial.duration.total_seconds() if trial.duration is not None else 0.0
+        val = f"{trial.value:.4f}" if trial.value is not None else "n/a"
+        try:
+            best_num = study.best_trial.number
+            best_val = f"{study.best_value:.4f}"
+        except ValueError:
+            best_num, best_val = -1, "n/a"
+        line = (f"[trial {trial.number:04d}] state={trial.state.name:9s} "
+                f"value={val}  dur={dur:6.1f}s  best={best_val} (#{best_num})")
+        print(line, flush=True)
+        study_logger.info(line)
+
     study.optimize(
         lambda t: objective(t, base_config, str(study_dir), args.search_epochs, args.top_k),
         n_trials=args.n_trials,
         timeout=args.timeout,
         gc_after_trial=True,
+        show_progress_bar=True,
+        callbacks=[_trial_callback],
     )
 
-    # TODO: generate_report(study, study_dir)
-    #       - all_trials.csv
-    #       - best_config.json (full merged config of winner)
-    #       - summary.md (top-5 table, pruning counts, wall-clock)
-    #       - optuna HTML plots (optimization_history, param_importances,
-    #         parallel_coordinate, slice_plot)
+    generate_report(study, str(study_dir))
 
     # TODO: evaluate best trial on CDF-v2 TEST split
     #       - load trial_NNNN/model.pth
@@ -276,10 +521,21 @@ def main():
     #       - run Tester.evaluate
     #       - write best_trial_test_results.json
 
-    print(f"\nBest trial: #{study.best_trial.number}  value={study.best_value:.4f}")
-    print("Best params:")
-    for k, v in study.best_params.items():
-        print(f"  {k}: {v}")
+    try:
+        best_trial = study.best_trial
+        best_line = f"Best trial: #{best_trial.number}  value={study.best_value:.4f}"
+        print(f"\n{best_line}")
+        study_logger.info(best_line)
+        print("Best params:")
+        study_logger.info("Best params:")
+        for k, v in study.best_params.items():
+            print(f"  {k}: {v}")
+            study_logger.info(f"  {k}: {v}")
+    except ValueError:
+        msg = "No completed trials."
+        print(f"\n{msg}")
+        study_logger.info(msg)
+    study_logger.info(f"=== Study '{args.study_name}' complete ===")
 
 
 if __name__ == '__main__':

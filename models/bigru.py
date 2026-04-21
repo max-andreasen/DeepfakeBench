@@ -13,13 +13,13 @@ Pipeline:
 class BiGRU(nn.Module):
     def __init__(
         self,
-        clip_embed_dim=768,
+        clip_embed_dim=1024,
         num_classes=2,
         hidden_dim=512,             # GRU hidden size per direction
         num_layers=2,               # stacked GRU layers
         gru_dropout=0.1,            # between-layer dropout; ignored if num_layers=1
         mlp_dropout=0.4,            # base dropout for classifier head
-        mlp_dropout_decay=False,    # False: static mlp_dropout on every layer. True: linear decay mlp_dropout -> 0 across layers.
+        mlp_hidden_dim=512,         # hidden size for MLP head
     ):
         super().__init__()
 
@@ -48,10 +48,10 @@ class BiGRU(nn.Module):
         in_dim = 2 * hidden_dim
 
         self.classifier = nn.Sequential(
-            nn.Linear(in_dim, 256),
+            nn.Linear(in_dim, mlp_hidden_dim),
             nn.GELU(),
-            nn.Dropout(0.4),
-            nn.Linear(256, num_classes),
+            nn.Dropout(mlp_dropout),
+            nn.Linear(mlp_hidden_dim, num_classes),
         )
 
     def forward(self, x):

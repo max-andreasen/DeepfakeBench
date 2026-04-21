@@ -1,0 +1,40 @@
+{
+  "per_window": {
+    "accuracy": 0.8942857142857142,
+    "auc": 0.9411004818594104,
+    "precision": 0.7071129707112971,
+    "recall": 0.8047619047619048,
+    "f1": 0.7527839643652561,
+    "confusion": {
+      "tp": 338,
+      "tn": 1540,
+      "fp": 140,
+      "fn": 82
+    },
+    "best_thresh": 0.4273298680782318,
+    "acc_at_best_thresh": 0.8933333333333333,
+    "num_samples": 2100,
+    "loss": 0.4430079175667329
+  },
+  "per_video": {
+    "accuracy": 0.9028571428571428,
+    "auc": 0.9470408163265306,
+    "precision": 0.725,
+    "recall": 0.8285714285714286,
+    "f1": 0.7733333333333333,
+    "confusion": {
+      "tp": 116,
+      "tn": 516,
+      "fp": 44,
+      "fn": 24
+    },
+    "best_thresh": 0.42824578285217285,
+    "acc_at_best_thresh": 0.8928571428571429,
+    "num_samples": 700
+  },
+  "num_windows": 2100,
+  "num_videos": 700,
+  "aggregation": "mean",
+  "shuffle_frames": false,
+  "input_transform": "none"
+}

@@ -26,6 +26,14 @@ from sklearn.metrics import (
     roc_curve,
 )
 
+# Entry points differ on what's on sys.path: layer_probe.py / parameter_search.py
+# add training/ to the path (so 'utils...' resolves), while evaluation/test.py adds
+# the repo root (so 'training.utils...' resolves). Accept either.
+try:
+    from utils.temporal_transforms import apply_temporal_transform
+except ImportError:
+    from training.utils.temporal_transforms import apply_temporal_transform
+
 class Tester:
     def __init__(self, config, model, logger):
         self.config = config
@@ -52,6 +60,10 @@ class Tester:
         all_video_keys = []
         total_loss = 0.0
 
+        # Discover transform from the dataset — single source of truth with
+        # DeepfakeTestDataset. Defaults to 'none' if the dataset predates the field.
+        input_transform = getattr(dataloader.dataset, "input_transform", "none")
+
         for x, label, video_id, label_cat in dataloader:
             x = x.to(self.device)
             label = label.to(self.device)
@@ -60,7 +72,12 @@ class Tester:
             if shuffle_frames:
                 x = x[:, :, torch.randperm(T, device=x.device), :]
 
-            x_flat = x.reshape(B * W, T, D)
+            # Apply temporal transform AFTER shuffle so 'diff' on a shuffled
+            # window produces noise diffs (the intended behavior for the
+            # shuffled-baseline temporal-gap measurement).
+            x = apply_temporal_transform(x, input_transform)
+
+            x_flat = x.reshape(-1, x.shape[-2], x.shape[-1])
             logits = self.model(x_flat)                       # [B*W, C]
             label_flat = label.repeat_interleave(W)           # [B*W]
             loss = F.cross_entropy(logits, label_flat)
@@ -176,6 +193,7 @@ class Tester:
         v_prob, v_label, _ = self._pool_windows_per_video(probs, labels_np, video_keys)
         per_video = self._compute_metrics(v_prob, v_label)
 
+        input_transform = getattr(dataloader.dataset, "input_transform", "none")
         result = {
             'per_window': per_window,
             'per_video': per_video,
@@ -183,6 +201,7 @@ class Tester:
             'num_videos': int(v_label.shape[0]),
             'aggregation': self.aggregation,
             'shuffle_frames': bool(shuffle_frames),
+            'input_transform': input_transform,
         }
 
         self.logger.info(

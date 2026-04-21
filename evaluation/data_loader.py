@@ -28,7 +28,7 @@ JOIN_KEYS = ["dataset", "label_cat", "video_id"]
 
 
 class DeepfakeTestDataset(Dataset):
-    def __init__(self, split_file, catalogue_file, num_frames=32, split="test"):
+    def __init__(self, split_file, catalogue_file, num_frames=32, split="test", input_transform="none"):
         split_df = pd.read_csv(Path(split_file))
         catalogue_df = pd.read_csv(Path(catalogue_file))
 
@@ -67,6 +67,9 @@ class DeepfakeTestDataset(Dataset):
         self.num_frames = num_frames
         self.n_windows = n_windows
         self.usable_frames = n_windows * num_frames  # truncate any remainder
+        # Stored on the dataset so Tester._forward_all can discover it and apply
+        # the transform AFTER the optional shuffle. Do not apply in __getitem__.
+        self.input_transform = input_transform
 
         if "label_cat" not in df.columns:
             raise ValueError(
@@ -79,9 +82,11 @@ class DeepfakeTestDataset(Dataset):
         self.video_ids = [str(v) for v in df["video_id"]]
         self.video_label_cats = [str(v) for v in df["label_cat"]]
 
+        effective_T = num_frames - 1 if input_transform == "diff" else num_frames
         print(
             f"DeepfakeTestDataset: {len(self.video_paths)} videos, "
-            f"{n_windows} windows/video (T={num_frames}, total_frames={total_frames})"
+            f"{n_windows} windows/video (T={num_frames}, total_frames={total_frames}), "
+            f"transform={input_transform}, effective_T={effective_T}"
         )
 
     def __len__(self):

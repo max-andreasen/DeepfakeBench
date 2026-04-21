@@ -1,0 +1,55 @@
+{
+  "saved_utc": "2026-04-21T12:33:52.853677+00:00",
+  "model_type": "transformer",
+  "model_kwargs": {
+    "clip_embed_dim": 1024,
+    "num_frames": 32,
+    "num_classes": 2,
+    "num_layers": 12,
+    "n_heads": 16,
+    "dim_feedforward": 2048,
+    "attn_dropout": 0.38046202546575547,
+    "mlp_dropout": 0.566493483171738,
+    "mlp_hidden_dim": 128
+  },
+  "optimizer": {
+    "type": "adam",
+    "params": {
+      "lr": 4.883803659497428e-05,
+      "beta1": 0.9,
+      "beta2": 0.999,
+      "eps": 1e-08,
+      "weight_decay": 3.7194682863955505e-06,
+      "amsgrad": false
+    }
+  },
+  "lr_scheduler": "cosine",
+  "num_epochs": 40,
+  "warmup_epochs": 5,
+  "batch_size": {
+    "train": 96,
+    "val": 64
+  },
+  "num_frames": {
+    "train": 32,
+    "val": 32
+  },
+  "seed": 1024,
+  "metric_scoring": "auc",
+  "use_data_augmentation": false,
+  "data_aug": null,
+  "input_transform": "none",
+  "data": {
+    "root_dir": "/home/max-andreasen/GitHub/DeepfakeBench",
+    "split_file": "datasets/splits/FaceForensics++.csv",
+    "catalogue_file": "clip/embeddings/probing/ViT-L-14-336-quickgelu/block_16/catalogue.csv",
+    "train_dataset": [
+      "FaceForensics++"
+    ],
+    "val_dataset": [
+      "FaceForensics++"
+    ],
+    "compression": "c23"
+  },
+  "device": "cuda"
+}

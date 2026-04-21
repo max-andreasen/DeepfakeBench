@@ -6,6 +6,8 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
+from utils.temporal_transforms import apply_temporal_transform
+
 """
 Loads per-video CLIP embeddings (.npz files) for training.
 
@@ -21,7 +23,7 @@ JOIN_KEYS = ["dataset", "label_cat", "video_id"]
 
 
 class DeepfakeDataset(Dataset):
-    def __init__(self, split_file, catalogue_file, split, num_frames=32):
+    def __init__(self, split_file, catalogue_file, split, num_frames=32, input_transform="none"):
         split_df = pd.read_csv(Path(split_file))
         catalogue_df = pd.read_csv(Path(catalogue_file))
 
@@ -45,11 +47,14 @@ class DeepfakeDataset(Dataset):
         self.labels = [int(x) for x in df["label"]]
         self.split = split
         self.num_frames = num_frames
+        self.input_transform = input_transform
 
         print(f"DeepfakeDataset [{split}]: {len(self.data)} samples")
         with np.load(self.data[0], allow_pickle=False) as z:
             first_shape = z["embedding"].shape
-        print(f"DeepfakeDataset: first embedding shape={first_shape}, embed_dim={first_shape[-1]}")
+        effective_T = num_frames - 1 if input_transform == "diff" else num_frames
+        print(f"DeepfakeDataset: first embedding shape={first_shape}, embed_dim={first_shape[-1]}, "
+              f"transform={input_transform}, effective_T={effective_T}")
 
     def __len__(self):
         return len(self.data)
@@ -69,4 +74,5 @@ class DeepfakeDataset(Dataset):
             video_features = video_features[: n_windows * self.num_frames]
             video_features = video_features.reshape(n_windows, self.num_frames, -1)
 
+        video_features = apply_temporal_transform(video_features, self.input_transform)
         return video_features, label

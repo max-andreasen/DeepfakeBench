@@ -47,7 +47,7 @@ MLP classification head:
 class Transformer(nn.Module):
     def __init__(
         self,
-        clip_embed_dim=768,
+        clip_embed_dim=1024,
         num_frames=32,
         num_classes=2,
         num_layers=8,
@@ -55,7 +55,7 @@ class Transformer(nn.Module):
         dim_feedforward=3072,
         attn_dropout=0.1,
         mlp_dropout=0.4,
-        mlp_dropout_decay=False,    # NOTE: Will not use, but maybe in very end.
+        mlp_hidden_dim=512,
         ):
 
         super(Transformer, self).__init__()
@@ -132,10 +132,10 @@ class Transformer(nn.Module):
 
         # MLP Classification Head 2 layers
         self.classifier = nn.Sequential(
-            nn.Linear(self.d_model, 256),   # or 512
+            nn.Linear(self.d_model, mlp_hidden_dim),
             nn.GELU(),
-            nn.Dropout(0.4),
-            nn.Linear(256, num_classes),
+            nn.Dropout(mlp_dropout),
+            nn.Linear(mlp_hidden_dim, num_classes),
         )
 
         # self.classifier = nn.Linear(self.d_model, num_classes)

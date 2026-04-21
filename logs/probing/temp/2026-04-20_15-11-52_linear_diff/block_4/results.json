@@ -1,0 +1,91 @@
+{
+  "layer": "block_4",
+  "model_type": "linear",
+  "input_transform": "diff",
+  "train": {
+    "best_val_auroc": 0.5184311224489796,
+    "final_val_auroc": 0.4821428571428571,
+    "epochs_completed": 25
+  },
+  "test_std": {
+    "per_window": {
+      "accuracy": 0.8,
+      "auc": 0.4932518424036281,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "confusion": {
+        "tp": 0,
+        "tn": 1680,
+        "fp": 0,
+        "fn": 420
+      },
+      "best_thresh": 0.1908983737230301,
+      "acc_at_best_thresh": 0.2795238095238095,
+      "num_samples": 2100,
+      "loss": 0.49902037327939813
+    },
+    "per_video": {
+      "accuracy": 0.8,
+      "auc": 0.49246811224489795,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "confusion": {
+        "tp": 0,
+        "tn": 560,
+        "fp": 0,
+        "fn": 140
+      },
+      "best_thresh": 0.19113926589488983,
+      "acc_at_best_thresh": 0.6428571428571429,
+      "num_samples": 700
+    },
+    "num_windows": 2100,
+    "num_videos": 700,
+    "aggregation": "mean",
+    "shuffle_frames": false,
+    "input_transform": "diff"
+  },
+  "test_shuf": {
+    "per_window": {
+      "accuracy": 0.8,
+      "auc": 0.44751558956916104,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "confusion": {
+        "tp": 0,
+        "tn": 1680,
+        "fp": 0,
+        "fn": 420
+      },
+      "best_thresh": 0.1927686631679535,
+      "acc_at_best_thresh": 0.8004761904761905,
+      "num_samples": 2100,
+      "loss": 0.4990382804112001
+    },
+    "per_video": {
+      "accuracy": 0.8,
+      "auc": 0.44275510204081636,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "confusion": {
+        "tp": 0,
+        "tn": 560,
+        "fp": 0,
+        "fn": 140
+      },
+      "best_thresh": 0.19108720123767853,
+      "acc_at_best_thresh": 0.7971428571428572,
+      "num_samples": 700
+    },
+    "num_windows": 2100,
+    "num_videos": 700,
+    "aggregation": "mean",
+    "shuffle_frames": true,
+    "input_transform": "diff"
+  },
+  "wallclock": 69.70412589199987
+}

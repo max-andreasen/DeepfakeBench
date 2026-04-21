@@ -1,0 +1,28 @@
+2026-04-20 19:23:26,582 - INFO - CLIP embeddings: clip/embeddings/probing/ViT-L-14-336-quickgelu/block_16/catalogue.csv  (dim=1024)
+2026-04-20 19:23:26,582 - INFO - Data split: datasets/splits/FaceForensics++.csv
+2026-04-20 19:23:26,582 - INFO -   train: 32 frames/video, batch_size=96
+2026-04-20 19:23:26,582 - INFO -   val:   32 frames/video, batch_size=64
+2026-04-20 19:23:26,582 - INFO -   input_transform: none
+2026-04-20 19:23:26,582 - INFO - Config: {'log_dir': '/home/max-andreasen/GitHub/DeepfakeBench/training/searches/runs/transformer_block16/trial_0054', 'model_type': 'transformer', 'model': {'transformer': {'clip_embed_dim': 1024, 'num_frames': 32, 'num_classes': 2, 'num_layers': 7, 'n_heads': 8, 'dim_feedforward': 1024, 'attn_dropout': 0.01809926759111393, 'mlp_dropout': 0.43201003524747766, 'mlp_hidden_dim': 256}, 'linear': {'clip_embed_dim': 1024, 'num_classes': 2}, 'bigru': {'clip_embed_dim': 1024, 'hidden_dim': 512, 'num_layers': 2, 'gru_dropout': 0.1, 'mlp_dropout': 0.4, 'num_classes': 2}}, 'root_dir': '/home/max-andreasen/GitHub/DeepfakeBench', 'split_file': 'datasets/splits/FaceForensics++.csv', 'catalogue_file': 'clip/embeddings/probing/ViT-L-14-336-quickgelu/block_16/catalogue.csv', 'compression': 'c23', 'batchSize': {'train': 96, 'val': 64}, 'workers': 4, 'num_frames': {'train': 32, 'val': 32}, 'input_transform': 'none', 'resolution': 256, 'save_ckpt': True, 'save_feat': False, 'optimizer': {'type': 'adamw', 'adam': {'lr': 2e-05, 'beta1': 0.9, 'beta2': 0.999, 'eps': 1e-08, 'weight_decay': 0.0005, 'amsgrad': False}, 'adamw': {'lr': 7.339553744486029e-05, 'beta1': 0.9, 'beta2': 0.999, 'eps': 1e-08, 'weight_decay': 0.00010799456145183362}, 'sgd': {'lr': 2e-05, 'momentum': 0.9, 'weight_decay': 0.0005}}, 'lr_scheduler': 'cosine_warmup', 'step_size': 10, 'step_gamma': 0.1, 'warmup_epochs': 3, 'num_epochs': 40, 'start_epoch': 0, 'save_epoch': 1, 'rec_iter': 100, 'logdir': './logs', 'seed': 1024, 'metric_scoring': 'auc', 'all_dataset': ['FaceForensics++', 'FF-F2F', 'FF-DF', 'FF-FS', 'FF-NT', 'FaceShifter', 'DeepFakeDetection', 'Celeb-DF-v1', 'Celeb-DF-v2', 'DFDCP', 'DFDC', 'DeeperForensics-1.0', 'UADFV', 'stargan'], 'train_dataset': ['FaceForensics++'], 'val_dataset': ['Celeb-DF-v2'], 'label_dict': {'DFD_fake': 1, 'DFD_real': 0, 'FF-SH': 1, 'FF-F2F': 1, 'FF-DF': 1, 'FF-FS': 1, 'FF-NT': 1, 'FF-FH': 1, 'FF-real': 0, 'CelebDFv1_real': 0, 'CelebDFv1_fake': 1, 'CelebDFv2_real': 0, 'CelebDFv2_fake': 1, 'DFDCP_Real': 0, 'DFDCP_FakeA': 1, 'DFDCP_FakeB': 1, 'DFDC_Fake': 1, 'DFDC_Real': 0, 'DF_fake': 1, 'DF_real': 0, 'UADFV_Fake': 1, 'UADFV_Real': 0, '0_real': 0, '1_fake': 1, 'real': 0, 'fake': 1}, 'use_data_augmentation': False, 'data_aug': {'flip_prob': 0.5, 'rotate_prob': 0.5, 'rotate_limit': [-10, 10], 'blur_prob': 0.5, 'blur_limit': [3, 7], 'brightness_prob': 0.5, 'brightness_limit': [-0.1, 0.1], 'contrast_limit': [-0.1, 0.1], 'quality_lower': 40, 'quality_upper': 100}, 'mean': [0.5, 0.5, 0.5], 'std': [0.5, 0.5, 0.5], 'device': 'cuda', 'cuda': True, 'cudnn': True}
+2026-04-20 19:23:28,912 - INFO - Epoch [0]: Loss: 0.5779779075007689
+2026-04-20 19:23:29,548 - INFO - --- Validation ---
+2026-04-20 19:23:29,549 - INFO - Epoch [0]: Accuracy: 0.800000011920929
+2026-04-20 19:23:29,551 - INFO - Epoch [0]: AUROC: 0.48698979591836733
+2026-04-20 19:23:29,551 - INFO - Epoch [0]: Accuracy@best_thresh=0.322: 0.6429
+2026-04-20 19:23:31,797 - INFO - Epoch [1]: Loss: 0.5760290465856853
+2026-04-20 19:23:32,434 - INFO - --- Validation ---
+2026-04-20 19:23:32,435 - INFO - Epoch [1]: Accuracy: 0.800000011920929
+2026-04-20 19:23:32,437 - INFO - Epoch [1]: AUROC: 0.6808928571428571
+2026-04-20 19:23:32,437 - INFO - Epoch [1]: Accuracy@best_thresh=0.173: 0.6043
+2026-04-20 19:23:34,680 - INFO - Epoch [2]: Loss: 0.48650683070483963
+2026-04-20 19:23:35,312 - INFO - --- Validation ---
+2026-04-20 19:23:35,312 - INFO - Epoch [2]: Accuracy: 0.800000011920929
+2026-04-20 19:23:35,315 - INFO - Epoch [2]: AUROC: 0.835625
+2026-04-20 19:23:35,315 - INFO - Epoch [2]: Accuracy@best_thresh=0.131: 0.7771
+2026-04-20 19:23:37,566 - INFO - Epoch [3]: Loss: 0.4240462462368764
+2026-04-20 19:23:38,209 - INFO - --- Validation ---
+2026-04-20 19:23:38,210 - INFO - Epoch [3]: Accuracy: 0.8014285564422607
+2026-04-20 19:23:38,212 - INFO - Epoch [3]: AUROC: 0.8750765306122448
+2026-04-20 19:23:38,213 - INFO - Epoch [3]: Accuracy@best_thresh=0.073: 0.7829
+2026-04-20 19:23:38,239 - INFO - Saved run config to /home/max-andreasen/GitHub/DeepfakeBench/training/searches/runs/transformer_block16/trial_0054/run_config.json
+2026-04-20 19:23:38,316 - INFO - Training pruned at epoch 4.

@@ -1,0 +1,20 @@
+2026-04-20 17:52:38,489 - === Starting study '_smoke_linear' ===
+2026-04-20 17:52:38,489 - CLI args: {'base_config': 'training/configs/linear_optuna_block16.yaml', 'study_name': '_smoke_linear', 'n_trials': 5, 'timeout': None, 'search_epochs': 3, 'top_k': 5, 'pruner': 'median', 'seed': 42, 'storage': '/home/max-andreasen/GitHub/DeepfakeBench/training/searches/optuna_studies.db'}
+2026-04-20 17:52:38,489 - base_config: /home/max-andreasen/GitHub/DeepfakeBench/training/configs/linear_optuna_block16.yaml
+2026-04-20 17:52:38,489 - model_type: linear
+2026-04-20 17:52:38,489 - catalogue_file: clip/embeddings/probing/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+2026-04-20 17:52:38,489 - input_transform: none
+2026-04-20 17:52:49,673 - [trial 0010] state=COMPLETE  value=0.7385  dur=  10.7s  best=0.8753 (#4)
+2026-04-20 17:52:59,676 - [trial 0011] state=COMPLETE  value=0.8763  dur=   9.9s  best=0.8763 (#11)
+2026-04-20 17:53:09,538 - [trial 0012] state=COMPLETE  value=0.5398  dur=   9.7s  best=0.8763 (#11)
+2026-04-20 17:53:19,420 - [trial 0013] state=COMPLETE  value=0.6208  dur=   9.8s  best=0.8763 (#11)
+2026-04-20 17:53:29,289 - [trial 0014] state=COMPLETE  value=0.8242  dur=   9.7s  best=0.8763 (#11)
+2026-04-20 17:53:29,893 - Best trial: #11  value=0.8763
+2026-04-20 17:53:29,893 - Best params:
+2026-04-20 17:53:29,894 -   optimizer_type: adamw
+2026-04-20 17:53:29,894 -   lr: 0.004613910322996432
+2026-04-20 17:53:29,894 -   weight_decay: 0.003038284340356533
+2026-04-20 17:53:29,894 -   lr_scheduler: cosine
+2026-04-20 17:53:29,894 -   mlp_hidden_dim: 1024
+2026-04-20 17:53:29,894 -   mlp_dropout: 0.11688122174779131
+2026-04-20 17:53:29,894 - === Study '_smoke_linear' complete ===

@@ -83,6 +83,7 @@ class Trainer:
             'metric_scoring': cfg.get('metric_scoring'),
             'use_data_augmentation': cfg.get('use_data_augmentation', False),
             'data_aug': cfg.get('data_aug') if cfg.get('use_data_augmentation') else None,
+            'input_transform': cfg.get('input_transform', 'none'),
             'data': {
                 'root_dir': cfg.get('root_dir', ''),
                 'split_file': cfg.get('split_file'),

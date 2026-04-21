@@ -1,0 +1,2 @@
+layer,model_type,input_transform,clip_embed_dim,best_val_auc,test_auc_std_window,test_auc_std_video,test_auc_shuf_window,test_auc_shuf_video,temporal_gap_video,wallclock_s
+block_16,linear,diff,1024,0.5609821428571429,0.5463166099773242,0.5501658163265306,0.4383971088435374,0.4273469387755102,0.12281887755102039,29.718872008999824

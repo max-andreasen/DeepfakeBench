@@ -37,6 +37,7 @@ def prepare_data(config, split):
         catalogue_file=os.path.join(root, config['catalogue_file']),
         split=split,
         num_frames=config['num_frames'][split],
+        input_transform=config.get('input_transform', 'none'),
     )
     return DataLoader(
         dataset,
@@ -146,6 +147,7 @@ def train_from_config(config, trial=None, log_path=None):
     logger.info(f"Data split: {config['split_file']}")
     logger.info(f"  train: {config['num_frames']['train']} frames/video, batch_size={config['batchSize']['train']}")
     logger.info(f"  val:   {config['num_frames']['val']} frames/video, batch_size={config['batchSize']['val']}")
+    logger.info(f"  input_transform: {config.get('input_transform', 'none')}")
     logger.info(f"Config: {config}")
 
     train_loader = prepare_data(config, 'train')
