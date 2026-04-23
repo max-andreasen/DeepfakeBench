@@ -1,0 +1,109 @@
+{
+  "timestamp": "2026-04-22T14:11:13",
+  "study_name": "bigru_search2_1",
+  "base_config_path": "/home/max-andreasen/GitHub/DeepfakeBench/training/configs/bigru_optuna_search.yaml",
+  "model_type": "bigru",
+  "cli_args": {
+    "n_trials": 850,
+    "search_epochs": 40,
+    "top_k": 10,
+    "pruner": "hyperband",
+    "seed": 42,
+    "timeout": 36000,
+    "storage": "/home/max-andreasen/GitHub/DeepfakeBench/training/searches/optuna_studies.db"
+  },
+  "sampler": "TPESampler(multivariate=True)",
+  "search_space": {
+    "common": {
+      "clip_layer": {
+        "type": "categorical",
+        "choices": [
+          "block_12",
+          "block_16",
+          "block_20",
+          "pre_proj"
+        ]
+      },
+      "optimizer_type": {
+        "type": "categorical",
+        "choices": [
+          "adam",
+          "adamw"
+        ]
+      },
+      "lr_scheduler": {
+        "type": "categorical",
+        "choices": [
+          "constant",
+          "cosine"
+        ]
+      },
+      "warmup_epochs": {
+        "type": "int",
+        "range": [
+          4,
+          14
+        ],
+        "conditional_on": {
+          "lr_scheduler": "cosine_warmup"
+        }
+      },
+      "lr": {
+        "type": "float",
+        "range": [
+          1e-05,
+          0.005
+        ],
+        "log": true
+      },
+      "weight_decay": {
+        "type": "float",
+        "range": [
+          0.0005,
+          0.01
+        ],
+        "log": true
+      }
+    },
+    "model": {
+      "hidden_dim": {
+        "type": "categorical",
+        "choices": [
+          256,
+          512,
+          1024
+        ]
+      },
+      "num_layers": {
+        "type": "int",
+        "range": [
+          2,
+          5
+        ],
+        "param_name": "gru_num_layers"
+      },
+      "gru_dropout": {
+        "type": "float",
+        "range": [
+          0.0,
+          0.4
+        ]
+      },
+      "mlp_dropout": {
+        "type": "float",
+        "range": [
+          0.0,
+          0.4
+        ]
+      },
+      "mlp_hidden_dim": {
+        "type": "categorical",
+        "choices": [
+          256,
+          512,
+          1024
+        ]
+      }
+    }
+  }
+}

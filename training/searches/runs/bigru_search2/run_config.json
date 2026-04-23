@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-04-21T13:29:36",
+  "timestamp": "2026-04-21T20:48:19",
   "study_name": "bigru_search2",
   "base_config_path": "/home/max-andreasen/GitHub/DeepfakeBench/training/configs/bigru_optuna_search.yaml",
   "model_type": "bigru",

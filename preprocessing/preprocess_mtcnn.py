@@ -378,6 +378,12 @@ if __name__ == '__main__':
     elif dataset_name in ('Celeb-DF-v1', 'Celeb-DF-v2'):
         sub_dataset_names = ['Celeb-real', 'Celeb-synthesis', 'YouTube-real']
         sub_dataset_paths = [Path(os.path.join(dataset_path, name)) for name in sub_dataset_names]
+    elif dataset_name == 'Celeb-DF-v3':
+        sub_dataset_paths = [Path(os.path.join(dataset_path, 'Celeb-real')),
+                             Path(os.path.join(dataset_path, 'YouTube-real'))]
+        for category in ['FaceReenact', 'FaceSwap', 'TalkingFace']:
+            cat_dir = Path(os.path.join(dataset_path, 'Celeb-synthesis', category))
+            sub_dataset_paths += sorted(p for p in cat_dir.iterdir() if p.is_dir())
     else:
         logger.error(f"Dataset {dataset_name} not yet supported for MTCNN preprocessing")
         sys.exit(1)

@@ -10,3 +10,9 @@
 2026-04-21 13:29:36,921 - model_type: bigru
 2026-04-21 13:29:36,921 - catalogue_file: None
 2026-04-21 13:29:36,921 - input_transform: none
+2026-04-21 20:48:19,837 - === Starting study 'bigru_search2' ===
+2026-04-21 20:48:19,837 - CLI args: {'base_config': 'training/configs/bigru_optuna_search.yaml', 'study_name': 'bigru_search2', 'n_trials': 850, 'timeout': None, 'search_epochs': 40, 'top_k': 5, 'pruner': 'hyperband', 'seed': 42, 'storage': '/home/max-andreasen/GitHub/DeepfakeBench/training/searches/optuna_studies.db'}
+2026-04-21 20:48:19,837 - base_config: /home/max-andreasen/GitHub/DeepfakeBench/training/configs/bigru_optuna_search.yaml
+2026-04-21 20:48:19,837 - model_type: bigru
+2026-04-21 20:48:19,837 - catalogue_file: None
+2026-04-21 20:48:19,837 - input_transform: none

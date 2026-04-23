@@ -74,70 +74,57 @@ OPT_CHOICES = {
     'linear':      ['adamw'],
 }
 SCHED_CHOICES = {
-    'transformer': ['constant', 'cosine', 'cosine_warmup'],
+    'transformer': ['cosine'],
     'bigru':       ['constant', 'cosine'],
-    'linear':      ['constant', 'cosine_warmup'],
+    'linear':      ['constant'],
 }
 
 
-CLIP_LAYER_CHOICES = ['block_12', 'block_16', 'block_20', 'pre_proj']
+CLIP_LAYER_CHOICES = {
+    'linear':      ['block_16'],
+    'bigru':       ['block_12', 'block_16', 'block_20', 'pre_proj'],
+    'transformer': ['block_16'],
+}
 CLIP_CATALOGUE_TEMPLATE = 'clip/embeddings/probing/ViT-L-14-336-quickgelu/{layer}/catalogue.csv'
 
 
+def _suggest(trial, name, spec):
+    """Dispatch to trial.suggest_* based on spec['type']."""
+    t = spec['type']
+    if t == 'categorical':
+        return trial.suggest_categorical(name, spec['choices'])
+    if t == 'int':
+        lo, hi = spec['range']
+        return trial.suggest_int(name, lo, hi)
+    if t == 'float':
+        lo, hi = spec['range']
+        return trial.suggest_float(name, lo, hi, log=spec.get('log', False))
+    raise ValueError(f"Unknown spec type: {t}")
+
+
 def search_space(trial, model_type):
-    """Creates a dict containing the search space with hyperparameters for this trial.
-    build_trial_config applies this onto a copy of the base YAML."""
-    params = {}
+    """Drive trial.suggest_* calls from describe_search_space (the source of truth).
+    Returns a params dict that build_trial_config applies onto the base YAML.
 
-    # CLIP layer: late blocks + the pre-projection representation. All four
-    # are 1024-dim so clip_embed_dim stays consistent; only the catalogue
-    # path changes per trial.
-    params['clip_layer'] = trial.suggest_categorical('clip_layer', CLIP_LAYER_CHOICES)
+    Common params land flat in the dict; model params nest under 'model'.
+    A spec may declare `conditional_on={key: value}` to skip suggestion unless
+    an already-suggested key matches — relies on insertion order in describe_search_space.
+    `param_name` overrides the Optuna parameter name (used where the config key
+    differs from the Optuna name, e.g. num_layers → gru_num_layers)."""
+    space = describe_search_space(model_type)
+    params = {'model': {}}
+    suggested = {}
 
-    opt_type = trial.suggest_categorical('optimizer_type', OPT_CHOICES[model_type])
-    params['optimizer_type'] = opt_type
+    for key, spec in space['common'].items():
+        cond = spec.get('conditional_on')
+        if cond and not all(suggested.get(k) == v for k, v in cond.items()):
+            continue
+        value = _suggest(trial, spec.get('param_name', key), spec)
+        suggested[key] = value
+        params[key] = value
 
-    sched = trial.suggest_categorical('lr_scheduler', SCHED_CHOICES[model_type])
-    params['lr_scheduler'] = sched
-    if sched == 'cosine_warmup':
-        params['warmup_epochs'] = trial.suggest_int('warmup_epochs', 4, 14)
-
-    # lr/weight_decay ranges are model-specific: the linear probe converges
-    # near 1e-2, while transformer/BiGRU live in 1e-4..1e-3. Using a shared
-    # [1e-5, 1e-2] range wastes budget for all three.
-    if model_type == 'transformer':
-        params['lr']           = trial.suggest_float('lr', 0.00001, 0.001, log=True)
-        params['weight_decay'] = trial.suggest_float('weight_decay', 1e-6, 1e-2, log=True)
-        params['model'] = {
-            'num_layers':      trial.suggest_int('num_layers', 6, 16),
-            'n_heads':         trial.suggest_categorical('n_heads', [2, 4, 8, 16]),
-            'dim_feedforward': trial.suggest_categorical('dim_feedforward', [256, 512, 1024, 2048]),
-            'attn_dropout':    trial.suggest_float('attn_dropout', 0.0, 0.6),
-            'mlp_dropout':     trial.suggest_float('mlp_dropout', 0.1, 0.6),
-            'mlp_hidden_dim':  trial.suggest_categorical('mlp_hidden_dim', [64, 128, 256, 512, 1024]),
-        }
-    elif model_type == 'bigru':
-        params['lr'] = trial.suggest_float('lr', 1e-5, 5e-3, log=True)
-        # weight_decay pinned in the base YAML — the first-round study showed
-        # near-zero correlation with AUC (+0.11) and the top-3 trials all used
-        # WD < 1.3e-5. Not worth the search dimension.
-        params['model'] = {
-            'hidden_dim':  trial.suggest_categorical('hidden_dim', [256, 512, 2048]),
-            'num_layers':  trial.suggest_int('gru_num_layers', 2, 5),
-            'gru_dropout': trial.suggest_float('gru_dropout', 0.0, 0.4),
-            'mlp_dropout': trial.suggest_float('mlp_dropout', 0.0, 0.4),
-            'mlp_hidden_dim': trial.suggest_categorical('mlp_hidden_dim', [256, 512, 1024]),
-        }
-    elif model_type == 'linear':
-        params['lr'] = trial.suggest_float('lr', 0.005, 0.1, log=True)
-        # weight_decay pinned in the base YAML — top-5 clustered at WD ≈ 2e-5.
-        # Correlation with AUC was +0.35 (weak); not worth the search dimension.
-        params['model'] = {
-            'mlp_hidden_dim': trial.suggest_categorical('mlp_hidden_dim', [512, 1024, 2048]),
-            'mlp_dropout':    trial.suggest_float('mlp_dropout', 0.0, 0.4),
-        }
-    else:
-        raise ValueError(f"Unknown model_type: {model_type}")
+    for key, spec in space.get('model', {}).items():
+        params['model'][key] = _suggest(trial, spec.get('param_name', key), spec)
 
     return params
 
@@ -371,43 +358,50 @@ def setup_study_logger(study_dir):
 
 
 def describe_search_space(model_type):
-    """Human-readable snapshot of the search space for a given model_type.
-    Kept in sync with search_space() by hand — update both together."""
+    """Source-of-truth search space for a given model_type. Consumed by
+    search_space() at trial time and also serialized to run_config.json.
+
+    Spec keys: `type` ∈ {categorical, int, float}; `choices` (categorical);
+    `range` (int/float); `log` (float, optional); `conditional_on` (dict of
+    {key: value}, suggestion skipped unless all already-suggested commons match);
+    `param_name` (override the Optuna parameter name when it differs from the
+    config key, e.g. bigru num_layers → gru_num_layers)."""
     space = {
         'common': {
-            'clip_layer':     {'type': 'categorical', 'choices': list(CLIP_LAYER_CHOICES)},
+            'clip_layer':     {'type': 'categorical', 'choices': list(CLIP_LAYER_CHOICES[model_type])},
             'optimizer_type': {'type': 'categorical', 'choices': list(OPT_CHOICES[model_type])},
             'lr_scheduler':   {'type': 'categorical', 'choices': list(SCHED_CHOICES[model_type])},
-            'warmup_epochs':  {'type': 'int', 'range': [4, 14], 'conditional_on': "lr_scheduler=='cosine_warmup'"},
+            'warmup_epochs':  {'type': 'int', 'range': [4, 14],
+                               'conditional_on': {'lr_scheduler': 'cosine_warmup'}},
         },
     }
     if model_type == 'transformer':
-        space['common']['lr']           = {'type': 'float', 'range': [1e-5, 1e-3], 'log': True}
-        space['common']['weight_decay'] = {'type': 'float', 'range': [1e-6, 1e-2], 'log': True}
+        space['common']['lr']           = {'type': 'float', 'range': [2.5e-5, 1e-3], 'log': True}
+        space['common']['weight_decay'] = {'type': 'float', 'range': [1e-6, 0.1], 'log': True}
         space['model'] = {
-            'num_layers':     {'type': 'int', 'range': [6, 16]},
-            'n_heads':        {'type': 'categorical', 'choices': [2, 4, 8, 16]},
-            'dim_feedforward':{'type': 'categorical', 'choices': [256, 512, 1024, 2048]},
-            'attn_dropout':   {'type': 'float', 'range': [0.0, 0.6]},
-            'mlp_dropout':    {'type': 'float', 'range': [0.1, 0.6]},
-            'mlp_hidden_dim': {'type': 'categorical', 'choices': [64, 128, 256, 512, 1024]},
+            'num_layers':     {'type': 'int', 'range': [6, 14]},
+            'n_heads':        {'type': 'categorical', 'choices': [2, 8, 16, 32]},
+            'dim_feedforward':{'type': 'categorical', 'choices': [1024]},
+            'attn_dropout':   {'type': 'float', 'range': [0.2, 0.7]},
+            'mlp_dropout':    {'type': 'float', 'range': [0.0, 0.4]},
+            'mlp_hidden_dim': {'type': 'categorical', 'choices': [512, 1024, 2048, 3072]},
         }
     elif model_type == 'bigru':
-        space['common']['lr'] = {'type': 'float', 'range': [1e-5, 5e-3], 'log': True}
-        # weight_decay intentionally absent — pinned in base YAML.
+        space['common']['lr']           = {'type': 'float', 'range': [1e-5, 5e-3], 'log': True}
+        space['common']['weight_decay'] = {'type': 'float', 'range': [5e-4, 1e-2], 'log': True}
         space['model'] = {
-            'hidden_dim':     {'type': 'categorical', 'choices': [256, 512, 2048]},
-            'num_layers':     {'type': 'int', 'range': [2, 5]},
+            'hidden_dim':     {'type': 'categorical', 'choices': [256, 512, 1024]},
+            'num_layers':     {'type': 'int', 'range': [2, 5], 'param_name': 'gru_num_layers'},
             'gru_dropout':    {'type': 'float', 'range': [0.0, 0.4]},
             'mlp_dropout':    {'type': 'float', 'range': [0.0, 0.4]},
             'mlp_hidden_dim': {'type': 'categorical', 'choices': [256, 512, 1024]},
         }
     elif model_type == 'linear':
-        space['common']['lr'] = {'type': 'float', 'range': [5e-3, 1e-1], 'log': True}
+        space['common']['lr'] = {'type': 'float', 'range': [5e-3, 7.5e-2], 'log': True}
         # weight_decay intentionally absent — pinned in base YAML.
         space['model'] = {
-            'mlp_hidden_dim': {'type': 'categorical', 'choices': [512, 1024, 2048]},
-            'mlp_dropout':    {'type': 'float', 'range': [0.0, 0.4]},
+            'mlp_hidden_dim': {'type': 'categorical', 'choices': [1024, 2048, 3072, 4096]},
+            'mlp_dropout':    {'type': 'float', 'range': [0.05, 0.4]},
         }
     return space
 

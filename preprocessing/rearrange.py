@@ -81,7 +81,7 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
 
     ## FaceForensics++ dataset or DeepfakeDetection dataset
     ## Note: DeepfakeDetection dataset is a subset of FaceForensics++ dataset
-    if dataset_name == 'FaceForensics++' or dataset_name == 'DeepFakeDetection' or dataset_name == 'FaceShifter': 
+    if dataset_name == 'FaceForensics++' or dataset_name == 'DeepFakeDetection' or dataset_name == 'FaceShifter':
         ff_dict = {
             'Deepfakes': 'FF-DF',
             'Face2Face': 'FF-F2F',
@@ -95,7 +95,7 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
         }
         # Load the JSON files for data split
         dataset_path = os.path.join(dataset_root_path, 'FaceForensics++')
-        
+
         # Load the JSON files for data split
         with open(file=os.path.join(os.path.join(dataset_root_path, 'FaceForensics++', 'train.json')), mode='r') as f:
             train_json = json.load(f)
@@ -103,8 +103,8 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
             val_json = json.load(f)
         with open(file=os.path.join(os.path.join(dataset_root_path, 'FaceForensics++', 'test.json')), mode='r') as f:
             test_json = json.load(f)
-            
-        # Create a dictionary for searching the data split 
+
+        # Create a dictionary for searching the data split
         video_to_mode = dict()
         for d1, d2 in train_json:
             video_to_mode[d1] = 'train'
@@ -121,15 +121,15 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
             video_to_mode[d2] = 'test'
             video_to_mode[d1+'_'+d2] = 'test'
             video_to_mode[d2+'_'+d1] = 'test'
-        
-        
+
+
         # FaceForensics++ real dataset
         if os.path.isdir(dataset_path) and os.path.isdir(os.path.join(dataset_path, 'original_sequences')):
             label = 'Real'
             dataset_dict['FaceForensics++'] = {}
             dataset_dict['FaceForensics++']['FF-real'] = {}
             dataset_dict['FaceForensics++']['DFD_real'] = {}
-            
+
             # Iterate over all compression levels: c23, c40, raw
             dataset_dict['FaceForensics++']['FF-real']['train'] = {}
             dataset_dict['FaceForensics++']['FF-real']['test'] = {}
@@ -140,7 +140,7 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
                     dataset_dict['FaceForensics++']['FF-real']['train'][compression_level] = {}
                     dataset_dict['FaceForensics++']['FF-real']['test'][compression_level] = {}
                     dataset_dict['FaceForensics++']['FF-real']['val'][compression_level] = {}
-            
+
                 # Iterate over all videos
                 for video_path in os.scandir(os.path.join(dataset_path, 'original_sequences', 'youtube', compression_level, frame_dir)):
                     if video_path.is_dir():
@@ -148,8 +148,8 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
                         mode = video_to_mode[video_name]
                         frame_paths = [os.path.join(video_path, frame.name) for frame in os.scandir(video_path)]
                         dataset_dict['FaceForensics++']['FF-real'][mode][compression_level][video_name] = {'label': ff_dict[label], 'frames': frame_paths}
-                        
-            label = 'DFD_Real'  
+
+            label = 'DFD_Real'
             # Same operations for DeepfakeDetection real dataset
             dataset_dict['FaceForensics++']['DFD_real']['train'] = {}
             dataset_dict['FaceForensics++']['DFD_real']['test'] = {}
@@ -177,7 +177,7 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
                     dataset_dict['FaceForensics++'][ff_dict[label]]['train'] = {}
                     dataset_dict['FaceForensics++'][ff_dict[label]]['test'] = {}
                     dataset_dict['FaceForensics++'][ff_dict[label]]['val'] = {}
-                    
+
                     # Iterate over all compression levels: c23, c40, raw
                     for compression_level in os.scandir(os.path.join(dataset_path, 'manipulated_sequences', label)):
                         if compression_level.is_dir() and compression_level.name in ["c23", "c40", "raw"]:
@@ -210,7 +210,7 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
                                     else:
                                         mode = video_to_mode[video_name]
                                         dataset_dict['FaceForensics++'][ff_dict[label]][mode][compression_level][video_name] = {'label': ff_dict[label], 'frames': frame_paths}
-         
+
 
         # get the DeepfakeDetection dataset from FaceForensics++ dataset
         if dataset_name == 'FaceForensics++':
@@ -224,7 +224,7 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
                 'DFD_real' in dataset_dict['FaceForensics++']:
                 # Add the DeepfakeDetection dataset to the dataset_dict
                 dataset_dict['DeepFakeDetection'] = {
-                    'DFD_fake': dataset_dict['FaceForensics++']['DFD_fake'], 
+                    'DFD_fake': dataset_dict['FaceForensics++']['DFD_fake'],
                     'DFD_real': dataset_dict['FaceForensics++']['DFD_real']
                 }
                 del dataset_dict['FaceForensics++']
@@ -233,7 +233,7 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
                 'FF-real' in dataset_dict['FaceForensics++']:
                 # Add the DeepfakeDetection dataset to the dataset_dict
                 dataset_dict['FaceShifter'] = {
-                    'FF-FH': dataset_dict['FaceForensics++']['FF-FH'], 
+                    'FF-FH': dataset_dict['FaceForensics++']['FF-FH'],
                     'FF-real': dataset_dict['FaceForensics++']['FF-real']
                 }
                 del dataset_dict['FaceForensics++']
@@ -253,7 +253,7 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
                                         }}
                         json.dump(data, f)
                         print(f"Finish writing {label}.json")
-    
+
     ## Celeb-DF-v1 dataset
     ## Note: videos in Celeb-DF-v1/2 are not in the same format as in FaceForensics++ dataset
     elif dataset_name == 'Celeb-DF-v1':
@@ -338,6 +338,74 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
             dataset_dict[dataset_name][label]['test'][vidname] = {'label': label, 'frames': frame_paths}
             dataset_dict[dataset_name][label]['val'][vidname] = {'label': label, 'frames': frame_paths}
 
+    ## Celeb-DF-v3 dataset
+    ## Real videos flat under Celeb-real/ and YouTube-real/; fakes nested under
+    ## Celeb-synthesis/<category>/<method>/ (FaceSwap, FaceReenact, TalkingFace
+    ## each with multiple methods). Same video_name can appear under multiple
+    ## methods, so fake keys are prefixed with the method name to avoid
+    ## collisions. Splits are not baked into this JSON — a separate
+    ## create_splits step produces the train/val/test assignment.
+    elif dataset_name == 'Celeb-DF-v3':
+        dataset_path = os.path.join(dataset_root_path, dataset_name)
+        dataset_dict[dataset_name] = {'CelebDFv3_real': {}, 'CelebDFv3_fake': {}}
+
+        def _scan_videos(root, label, key_prefix=''):
+            if not os.path.isdir(root):
+                return
+            for video_path in os.scandir(root):
+                if not video_path.is_dir():
+                    continue
+                key = f"{key_prefix}{video_path.name}" if key_prefix else video_path.name
+                frame_paths = [os.path.join(video_path, f.name) for f in os.scandir(video_path)]
+                dataset_dict[dataset_name][label][key] = {'label': label, 'frames': frame_paths}
+
+        for real_folder in ('Celeb-real', 'YouTube-real'):
+            _scan_videos(os.path.join(dataset_path, real_folder, frame_dir), 'CelebDFv3_real')
+
+        synth_root = os.path.join(dataset_path, 'Celeb-synthesis')
+        if os.path.isdir(synth_root):
+            for category in os.scandir(synth_root):
+                if not category.is_dir():
+                    continue
+                for method in os.scandir(category.path):
+                    if method.is_dir():
+                        _scan_videos(os.path.join(method.path, frame_dir),
+                                     'CelebDFv3_fake', key_prefix=f"{method.name}_")
+
+    ## WildDeepfakes dataset
+    ## Split is encoded in the top-level directory names
+    ## ({fake,real}_{train,test}), so we carry train/test into the JSON directly.
+    ## WDF has no separate val split; val is mirrored from test.
+    elif dataset_name == 'WildDeepfakes':
+        dataset_path = os.path.join(dataset_root_path, dataset_name)
+        dataset_dict[dataset_name] = {
+            'WDF_real': {'train': {}, 'val': {}, 'test': {}},
+            'WDF_fake': {'train': {}, 'val': {}, 'test': {}},
+        }
+        sub_map = {
+            'real_train': ('WDF_real', 'train'),
+            'real_test':  ('WDF_real', 'test'),
+            'fake_train': ('WDF_fake', 'train'),
+            'fake_test':  ('WDF_fake', 'test'),
+        }
+        for sub, (label, split) in sub_map.items():
+            frames_root = os.path.join(dataset_path, sub, frame_dir)
+            if not os.path.isdir(frames_root):
+                continue
+            for video_path in os.scandir(frames_root):
+                if not video_path.is_dir():
+                    continue
+                video_name = video_path.name  # "{tar_id}_{video_id}"
+                frame_paths = [os.path.join(video_path, f.name) for f in os.scandir(video_path)]
+                dataset_dict[dataset_name][label][split][video_name] = {'label': label, 'frames': frame_paths}
+        for label in ('WDF_real', 'WDF_fake'):
+            dataset_dict[dataset_name][label]['val'] = dataset_dict[dataset_name][label]['test']
+
+
+    #
+    # ---------------
+    # Other datasets supported by DeepfakeBench
+    #
     ## DFDCP dataset
     elif dataset_name == 'DFDCP':
         dataset_path = os.path.join(dataset_root_path, dataset_name)
@@ -370,7 +438,7 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
         # Special case for val data of DFDCP
         for label in ['DFDCP_Real', 'DFDCP_FakeA', 'DFDCP_FakeB']:
             dataset_dict[dataset_name][label]['val'] = dataset_dict[dataset_name][label]['test']
-    
+
     ## DFDC dataset
     elif dataset_name == 'DFDC':
         dataset_path = os.path.join(dataset_root_path, dataset_name)
@@ -393,7 +461,7 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
                         continue
                     dataset_dict[dataset_name][label]['test'][vidname] = {'label': label, 'frames': frame_paths}
                     dataset_dict[dataset_name][label]['val'] = {'label': label, 'frames': frame_paths}
-            
+
             elif folder.name in ['train']:
                 num_file = 0
                 for dfdc_train_part in os.scandir(os.path.join(dataset_path, folder.name)):
@@ -467,7 +535,7 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
                 dataset_dict[dataset_name][label]['train'][video_name] = {'label': label, 'frames': frame_paths}
                 dataset_dict[dataset_name][label]['test'][video_name] = {'label': label, 'frames': frame_paths}
                 dataset_dict[dataset_name][label]['val'][video_name] = {'label': label, 'frames': frame_paths}
-        
+
     ## UADFV dataset
     elif dataset_name == 'UADFV':
         dataset_path = os.path.join(dataset_root_path, dataset_name)
