@@ -1,0 +1,53 @@
+tag: peft_smoke
+
+# data
+root_dir: /home/max-andreasen/GitHub/DeepfakeBench
+split_file: datasets/splits/FaceForensics++.csv
+rearrange_json: preprocessing/rearrangements/dataset_json_mtcnn/FaceForensics++.json
+dataset_name: FaceForensics++
+num_frames: { train: 32, val: 32 }
+
+# model — same as main config; smoke isn't a hyperparam search
+clip:
+  name: ViT-L-14-336-quickgelu
+  pretrained: openai
+  ln_scope: all
+  grad_checkpointing: true
+  amp_dtype: fp16
+
+temporal:
+  clip_embed_dim: 1024
+  num_frames: 32
+  num_classes: 2
+  num_layers: 8
+  n_heads: 8
+  dim_feedforward: 3072
+  attn_dropout: 0.1
+  mlp_dropout: 0.4
+  mlp_hidden_dim: 512
+
+optimizer:
+  type: adamw
+  lr: 2.0e-5
+  weight_decay: 5.0e-4
+  beta1: 0.9
+  beta2: 0.999
+  eps: 1.0e-8
+
+lr_scheduler: constant            # no scheduler steps in a 1-epoch smoke
+num_epochs: 1
+warmup_epochs: 0
+
+# tiny + cheap — verifying the pipeline, not training a model
+batchSize: { train: 4, val: 4 }
+grad_accum_steps: 8
+workers: 2
+seed: 1024
+device: cuda
+
+log_dir: peft/trained
+save_ckpt: true
+metric_scoring: auc
+
+# Smoke cap: tiny subset of train and val. min_superset still enforced.
+max_videos: 20

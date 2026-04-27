@@ -1,0 +1,22 @@
+# FF++ test-split evaluation for a trained PEFT checkpoint.
+# After Step 7 finishes, replace <FILL_IN_AFTER_STEP_7> with the actual
+# timestamp suffix of the run dir, e.g. peft_ln_ff_mtcnn_2026-04-25-12-00-00.
+
+trained_model_dir: peft/trained/peft_ln_ff_mtcnn_<FILL_IN_AFTER_STEP_7>
+output_dir: peft/evaluation/results
+
+root_dir: /home/max-andreasen/GitHub/DeepfakeBench
+split_file: datasets/splits/FaceForensics++.csv
+rearrange_json: preprocessing/rearrangements/dataset_json_mtcnn/FaceForensics++.json
+dataset_name: FaceForensics++
+split: test
+
+num_frames: 32
+batch_size: 1
+workers: 4
+seed: 1024
+device: cuda
+
+window_aggregation: mean         # mean | max | softmax
+softmax_temp: 1.0
+eval_shuffled: false             # set true to also run the temporal-shuffle ablation

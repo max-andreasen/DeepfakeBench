@@ -73,8 +73,10 @@ log = logging.getLogger("deepfakebench")
 # Maps label category strings (from rearrange.py JSON) to numeric labels.
 # Convention: 1 = real, 0 = fake.
 LABEL_MAP = {
+    "CelebDFv3_real": 1, "CelebDFv3_fake": 0,
     "CelebDFv2_real": 1, "CelebDFv2_fake": 0,
     "CelebDFv1_real": 1, "CelebDFv1_fake": 0,
+    "WDF_real":       1, "WDF_fake":       0,
     "FF-real":        1, "FF-DF": 0, "FF-F2F": 0, "FF-FS": 0, "FF-NT": 0,
     "DFDCP_Real":     1, "DFDCP_FakeA": 0, "DFDCP_FakeB": 0,
     "DFDC_Real":      1, "DFDC_Fake": 0,

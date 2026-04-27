@@ -1,0 +1,10 @@
+2026-04-27 09:41:12,909 - INFO - ============================================================
+2026-04-27 09:41:12,909 - INFO - Config: {'tag': 'peft_smoke', 'root_dir': '/home/max-andreasen/GitHub/DeepfakeBench', 'split_file': 'datasets/splits/FaceForensics++.csv', 'rearrange_json': 'preprocessing/rearrangements/dataset_json_mtcnn/FaceForensics++.json', 'dataset_name': 'FaceForensics++', 'num_frames': {'train': 32, 'val': 32}, 'clip': {'name': 'ViT-L-14-336-quickgelu', 'pretrained': 'openai', 'ln_scope': 'all', 'grad_checkpointing': True, 'amp_dtype': 'fp16'}, 'temporal': {'clip_embed_dim': 1024, 'num_frames': 32, 'num_classes': 2, 'num_layers': 8, 'n_heads': 8, 'dim_feedforward': 3072, 'attn_dropout': 0.1, 'mlp_dropout': 0.4, 'mlp_hidden_dim': 512}, 'optimizer': {'type': 'adamw', 'lr': 2e-05, 'weight_decay': 0.0005, 'beta1': 0.9, 'beta2': 0.999, 'eps': 1e-08}, 'lr_scheduler': 'constant', 'num_epochs': 1, 'warmup_epochs': 0, 'batchSize': {'train': 4, 'val': 4}, 'grad_accum_steps': 8, 'workers': 2, 'seed': 1024, 'device': 'cuda', 'log_dir': 'peft/trained', 'save_ckpt': True, 'metric_scoring': 'auc', 'max_videos': 20}
+2026-04-27 09:41:12,909 - INFO - Log dir: /home/max-andreasen/GitHub/DeepfakeBench/peft/trained/peft_smoke_2026-04-27-09-41-12
+2026-04-27 09:41:12,909 - INFO - Loading CLIP backbone...
+2026-04-27 09:41:16,791 - INFO - train batches: 5  val batches: 5
+2026-04-27 09:41:19,835 - INFO - trainable=34.53M total=337.9M
+2026-04-27 09:41:47,644 - INFO - saved final ckpt (no best found) to /home/max-andreasen/GitHub/DeepfakeBench/peft/trained/peft_smoke_2026-04-27-09-41-12/model.pth
+2026-04-27 09:41:47,644 - INFO - wrote run_config to /home/max-andreasen/GitHub/DeepfakeBench/peft/trained/peft_smoke_2026-04-27-09-41-12/run_config.json
+2026-04-27 09:41:47,644 - INFO - best_val_auc=0.0000
+2026-04-27 09:41:47,644 - INFO - training interrupted before completion.

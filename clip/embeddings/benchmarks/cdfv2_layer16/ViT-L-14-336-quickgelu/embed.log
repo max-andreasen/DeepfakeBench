@@ -1,0 +1,10 @@
+2026-04-24 15:07:31,997 - INFO - ============================================================
+2026-04-24 15:07:31,997 - INFO - Starting run | config=configs/cdfv2_layer16.yaml | resume=False
+2026-04-24 15:07:31,997 - INFO - Dataset: Celeb-DF-v2  T=96  seed=1024  max_videos=None  device=cuda
+2026-04-24 15:07:31,997 - INFO - Model: ViT-L-14-336-quickgelu (pretrained=openai)
+2026-04-24 15:07:31,997 - INFO - Extract: blocks=[16], include_final=False
+2026-04-24 15:07:31,997 - INFO - Output dir: /home/max-andreasen/GitHub/DeepfakeBench/clip/embeddings/benchmarks/cdfv2_layer16/ViT-L-14-336-quickgelu
+2026-04-24 15:07:32,328 - INFO - Built DataFrame: 6047 videos
+2026-04-24 15:07:36,722 - INFO - Layers: ['pre_proj', 'block_16']  dims: {'pre_proj': 1024, 'block_16': 1024}
+2026-04-24 20:29:09,287 - INFO - Embedded 6047 videos.
+2026-04-24 20:29:09,291 - INFO - Embedding finished. Failures: 0

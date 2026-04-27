@@ -51,13 +51,13 @@ rearrange:
     default: "/home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb"
   output_file_path: # the json path to the dataset
     type: str
-    default: "../preprocessing/dataset_json_mtcnn"
+    default: "../preprocessing/rearrangements/dataset_json_mtcnn"
   comp: # the compression level of videos, only in the dataset of FaceForensics++.
     choices: ["raw", "c23", "c40"]
     default: "c23"
   frame_dir: # subdirectory name containing extracted frames (e.g. "frames" for dlib, "mtcnn_frames" for MTCNN)
     type: str
-    default: "frames"
+    default: "mtcnn_frames"
   perturbation: # Extensive real-world perturbations are applied to DeeperForensics-1.0 dataset
     choices:
       [

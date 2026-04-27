@@ -1,0 +1,19 @@
+dataset_name: Celeb-DF-v1
+input_json: preprocessing/rearrangements/dataset_json_mtcnn/Celeb-DF-v1.json
+
+output_base_dir: clip/embeddings/benchmarks/cdfv1_layer16
+
+model:
+  name: ViT-L-14-336-quickgelu
+  pretrained: openai
+
+extract:
+  blocks: [16]
+  include_final: false
+
+T: 96
+batch_size: null
+seed: 1024
+
+device: cuda
+max_videos: null

@@ -343,41 +343,50 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
     ## Celeb-synthesis/<category>/<method>/ (FaceSwap, FaceReenact, TalkingFace
     ## each with multiple methods). Same video_name can appear under multiple
     ## methods, so fake keys are prefixed with the method name to avoid
-    ## collisions. Splits are not baked into this JSON — a separate
-    ## create_splits step produces the train/val/test assignment.
+    ## collisions. A single 'all' split wraps every video — a separate
+    ## create_splits step produces the actual train/val/test assignment.
     elif dataset_name == 'Celeb-DF-v3':
+        from tqdm import tqdm
         dataset_path = os.path.join(dataset_root_path, dataset_name)
-        dataset_dict[dataset_name] = {'CelebDFv3_real': {}, 'CelebDFv3_fake': {}}
+        dataset_dict[dataset_name] = {
+            'CelebDFv3_real': {'all': {}},
+            'CelebDFv3_fake': {'all': {}},
+        }
 
-        def _scan_videos(root, label, key_prefix=''):
+        def _scan_videos(root, label, key_prefix='', desc=''):
             if not os.path.isdir(root):
                 return
-            for video_path in os.scandir(root):
-                if not video_path.is_dir():
-                    continue
+            entries = [e for e in os.scandir(root) if e.is_dir()]
+            for video_path in tqdm(entries, desc=desc, unit='vid', leave=False):
                 key = f"{key_prefix}{video_path.name}" if key_prefix else video_path.name
                 frame_paths = [os.path.join(video_path, f.name) for f in os.scandir(video_path)]
-                dataset_dict[dataset_name][label][key] = {'label': label, 'frames': frame_paths}
+                dataset_dict[dataset_name][label]['all'][key] = {'label': label, 'frames': frame_paths}
 
         for real_folder in ('Celeb-real', 'YouTube-real'):
-            _scan_videos(os.path.join(dataset_path, real_folder, frame_dir), 'CelebDFv3_real')
+            _scan_videos(os.path.join(dataset_path, real_folder, frame_dir),
+                         'CelebDFv3_real', desc=real_folder)
 
         synth_root = os.path.join(dataset_path, 'Celeb-synthesis')
         if os.path.isdir(synth_root):
-            for category in os.scandir(synth_root):
-                if not category.is_dir():
-                    continue
-                for method in os.scandir(category.path):
-                    if method.is_dir():
-                        _scan_videos(os.path.join(method.path, frame_dir),
-                                     'CelebDFv3_fake', key_prefix=f"{method.name}_")
+            categories = [c for c in os.scandir(synth_root) if c.is_dir()]
+            for category in categories:
+                methods = [m for m in os.scandir(category.path) if m.is_dir()]
+                for method in tqdm(methods, desc=category.name, unit='method'):
+                    _scan_videos(os.path.join(method.path, frame_dir),
+                                 'CelebDFv3_fake',
+                                 key_prefix=f"{method.name}_",
+                                 desc=f"{category.name}/{method.name}")
 
     ## WildDeepfakes dataset
     ## Split is encoded in the top-level directory names
     ## ({fake,real}_{train,test}), so we carry train/test into the JSON directly.
     ## WDF has no separate val split; val is mirrored from test.
+    ## preprocess_wildDF.py always writes to 'frames/' (no face detection — source
+    ## PNGs are pre-cropped 224x224), so the frame_dir config knob is ignored here.
     elif dataset_name == 'WildDeepfakes':
+        from tqdm import tqdm
         dataset_path = os.path.join(dataset_root_path, dataset_name)
+        wdf_frame_dir = 'frames'
         dataset_dict[dataset_name] = {
             'WDF_real': {'train': {}, 'val': {}, 'test': {}},
             'WDF_fake': {'train': {}, 'val': {}, 'test': {}},
@@ -389,12 +398,11 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
             'fake_test':  ('WDF_fake', 'test'),
         }
         for sub, (label, split) in sub_map.items():
-            frames_root = os.path.join(dataset_path, sub, frame_dir)
+            frames_root = os.path.join(dataset_path, sub, wdf_frame_dir)
             if not os.path.isdir(frames_root):
                 continue
-            for video_path in os.scandir(frames_root):
-                if not video_path.is_dir():
-                    continue
+            entries = [e for e in os.scandir(frames_root) if e.is_dir()]
+            for video_path in tqdm(entries, desc=sub, unit='vid', leave=False):
                 video_name = video_path.name  # "{tar_id}_{video_id}"
                 frame_paths = [os.path.join(video_path, f.name) for f in os.scandir(video_path)]
                 dataset_dict[dataset_name][label][split][video_name] = {'label': label, 'frames': frame_paths}
