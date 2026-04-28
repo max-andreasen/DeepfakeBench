@@ -1,0 +1,13 @@
+study_dir:        training/searches/runs/transformer_search3
+catalogue_file:   clip/embeddings/benchmarks/cdfv2_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+out_dir:          evaluation/results/cdfv2_top_k/transformer_search3
+
+# Optional: restrict to an official split instead of all catalogue videos.
+# Omit split_file to use all videos in the catalogue (cross-dataset default).
+split_file:       datasets/splits/Celeb-DF-v2.csv
+split:            test
+
+top_k:               10
+num_frames:          32
+batch_size:          64
+window_aggregation:  mean

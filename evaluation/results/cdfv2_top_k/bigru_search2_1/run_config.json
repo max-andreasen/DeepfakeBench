@@ -1,0 +1,25 @@
+{
+  "evaluated_utc": "2026-04-28T08:11:49.453483+00:00",
+  "study_dir": "training/searches/runs/bigru_search2_1",
+  "catalogue_file": "clip/embeddings/benchmarks/cdfv2_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv",
+  "split_file": "datasets/splits/Celeb-DF-v2.csv",
+  "split": "test",
+  "out_dir": "evaluation/results/cdfv2_top_k/bigru_search2_1",
+  "top_k": 10,
+  "num_frames": 32,
+  "batch_size": 64,
+  "window_aggregation": "mean",
+  "trials_evaluated": [
+    840,
+    1,
+    415,
+    24,
+    13,
+    263,
+    175,
+    763,
+    194,
+    261
+  ],
+  "trials_skipped": []
+}

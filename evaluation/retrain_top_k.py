@@ -1,5 +1,5 @@
 """
-retrain_top_k.py — statistically robust cross-dataset evaluation of top-K
+retrain_top_k.py to form statistically robust cross-dataset evaluation of top-K
 param-search configurations.
 
 For each of the K best hyperparameter configs (ranked by FF++ val AUC from
@@ -33,13 +33,13 @@ import importlib.util
 import json
 import os
 import sys
-import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import torch
+import yaml
 from torch.utils.data import DataLoader
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -78,24 +78,7 @@ def parse_args():
     p = argparse.ArgumentParser(
         description='Retrain top-K param-search configs N times and evaluate cross-dataset.'
     )
-    p.add_argument('--study_dir', required=True,
-                   help='Path to Optuna run dir (contains all_trials.csv + trial_XXXX/)')
-    p.add_argument('--catalogue_file', required=True,
-                   help='Held-out benchmark catalogue CSV (e.g. CDFv2 block_16)')
-    p.add_argument('--out_dir', required=True,
-                   help='Output directory (created if absent)')
-    p.add_argument('--top_k', type=int, default=10,
-                   help='Number of top configs to evaluate (default: 10)')
-    p.add_argument('--n_seeds', type=int, required=True,
-                   help='Number of training runs (seeds) per config')
-    p.add_argument('--base_seed', type=int, default=0,
-                   help='Seeds used: base_seed, base_seed+1, ..., base_seed+n_seeds-1 (default: 0)')
-    p.add_argument('--num_epochs', type=int, default=None,
-                   help='Override training epochs (default: use value from run_config.json)')
-    p.add_argument('--batch_size_eval', type=int, default=64,
-                   help='Eval batch size in videos (default: 64)')
-    p.add_argument('--window_aggregation', default='mean',
-                   choices=['mean', 'max', 'softmax'])
+    p.add_argument('--config', required=True, help='Path to retrain_top_k YAML config')
     return p.parse_args()
 
 
@@ -113,24 +96,14 @@ def get_top_k_trials(study_dir: Path, top_k: int) -> pd.DataFrame:
     return result
 
 
-def make_split_csv(catalogue_file: Path, tmp_dir: str) -> str:
-    """Write a temp split CSV where every video in the catalogue is split=test."""
-    cat = pd.read_csv(catalogue_file)
-    join_keys = [k for k in ['dataset', 'label_cat', 'video_id'] if k in cat.columns]
-    split_df = cat[join_keys].copy()
-    split_df['split'] = 'test'
-    path = os.path.join(tmp_dir, '_split.csv')
-    split_df.to_csv(path, index=False)
-    return path
-
-
-def build_test_loader(catalogue_file: Path, split_csv: str, num_frames: int,
-                      batch_size: int, input_transform: str) -> DataLoader:
+def build_test_loader(catalogue_file: Path, split_file: str, split: str,
+                      num_frames: int, batch_size: int,
+                      input_transform: str) -> DataLoader:
     dataset = DeepfakeTestDataset(
-        split_file=split_csv,
+        split_file=split_file,
         catalogue_file=str(catalogue_file),
         num_frames=num_frames,
-        split='test',
+        split=split,
         input_transform=input_transform,
     )
     return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=4)
@@ -141,7 +114,9 @@ def build_test_loader(catalogue_file: Path, split_csv: str, num_frames: int,
 # ---------------------------------------------------------------------------
 
 def reconstruct_train_config(run_config: dict, seed: int, log_dir: str,
-                              num_epochs_override=None) -> dict:
+                              num_epochs_override=None,
+                              early_stopping_patience=0,
+                              has_custom_val=False) -> dict:
     """Map a saved run_config.json back to the dict shape train_from_config expects.
 
     run_config.json uses a curated nested layout (trainer.save_run_config);
@@ -191,6 +166,8 @@ def reconstruct_train_config(run_config: dict, seed: int, log_dir: str,
         'workers':   4,
         'save_ckpt': True,
         'log_dir':   log_dir,  # unused when log_path is explicit; kept for completeness
+        'early_stopping_patience': early_stopping_patience,
+        'eval_ff_val': not has_custom_val,
     }
     return cfg
 
@@ -199,31 +176,55 @@ def reconstruct_train_config(run_config: dict, seed: int, log_dir: str,
 # Per-seed: train + evaluate
 # ---------------------------------------------------------------------------
 
+def build_val_eval_fn(val_catalogue_file, val_split_file, val_split,
+                      num_frames, batch_size, input_transform):
+    """Return a per_epoch_eval_fn(model, logger) -> float for early stopping."""
+    def fn(model, logger):
+        dataset = DeepfakeTestDataset(
+            split_file=val_split_file,
+            catalogue_file=val_catalogue_file,
+            num_frames=num_frames,
+            split=val_split,
+            input_transform=input_transform,
+        )
+        loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+        tester = Tester({'window_aggregation': 'mean'}, model, logger)
+        result = tester.evaluate(loader, shuffle_frames=False)
+        return result['per_video']['auc']
+    return fn
+
+
 def run_seed(
     seed: int,
     train_config: dict,
     seed_dir: Path,
     catalogue_file: Path,
-    split_csv: str,
+    test_split_file: str,
+    test_split: str,
     num_frames_eval: int,
     batch_size_eval: int,
     window_aggregation: str,
     logger,
+    per_epoch_eval_fn=None,
 ) -> float:
     """Train one model, evaluate on benchmark, return per-video AUC."""
     seed_dir.mkdir(parents=True, exist_ok=True)
 
     # --- Train ---
-    result = train_from_config(train_config, log_path=str(seed_dir))
+    result = train_from_config(train_config, log_path=str(seed_dir),
+                               per_epoch_eval_fn=per_epoch_eval_fn)
     model = result['model']
     logger.info(f"  Seed {seed}: best_val_auc={result['best_val_auroc']:.4f}  "
                 f"final_val_auc={result['final_val_auroc']:.4f}  "
                 f"epochs={result['epochs_completed']}")
 
+    with open(seed_dir / 'epoch_aucs.json', 'w') as f:
+        json.dump(result['epoch_aucs'], f)
+
     # --- Evaluate on held-out benchmark ---
     input_transform = train_config.get('input_transform', 'none')
-    loader = build_test_loader(catalogue_file, split_csv, num_frames_eval,
-                               batch_size_eval, input_transform)
+    loader = build_test_loader(catalogue_file, test_split_file, test_split,
+                               num_frames_eval, batch_size_eval, input_transform)
     eval_cfg = {'window_aggregation': window_aggregation}
     tester = Tester(eval_cfg, model, logger)
     test_result = tester.evaluate(loader, shuffle_frames=False)
@@ -254,11 +255,14 @@ def run_config_seeds(
     study_dir: Path,
     out_dir: Path,
     catalogue_file: Path,
-    split_csv: str,
+    test_split_file: str,
+    test_split: str,
     num_epochs_override,
     batch_size_eval: int,
     window_aggregation: str,
     logger,
+    val_eval_args=None,
+    early_stopping_patience=0,
 ) -> dict:
     """Retrain a config N times. Returns per-config summary dict."""
     trial_dir    = study_dir / f'trial_{trial_num:04d}'
@@ -273,6 +277,20 @@ def run_config_seeds(
         saved_run_config = json.load(f)
 
     num_frames_eval = saved_run_config['num_frames']['val']
+    input_transform = saved_run_config.get('input_transform', 'none')
+
+    # Build per_epoch_eval_fn from this trial's actual num_frames + input_transform.
+    per_epoch_eval_fn = None
+    if val_eval_args and val_eval_args.get('val_catalogue_file'):
+        per_epoch_eval_fn = build_val_eval_fn(
+            val_catalogue_file=val_eval_args['val_catalogue_file'],
+            val_split_file=val_eval_args['val_split_file'],
+            val_split=val_eval_args['val_split'],
+            num_frames=num_frames_eval,
+            batch_size=batch_size_eval,
+            input_transform=input_transform,
+        )
+
     aucs = []
 
     for seed in seeds:
@@ -283,6 +301,8 @@ def run_config_seeds(
             saved_run_config, seed=seed,
             log_dir=str(trial_out),
             num_epochs_override=num_epochs_override,
+            early_stopping_patience=early_stopping_patience,
+            has_custom_val=(per_epoch_eval_fn is not None),
         )
         try:
             auc = run_seed(
@@ -290,11 +310,13 @@ def run_config_seeds(
                 train_config=train_cfg,
                 seed_dir=seed_dir,
                 catalogue_file=catalogue_file,
-                split_csv=split_csv,
+                test_split_file=test_split_file,
+                test_split=test_split,
                 num_frames_eval=num_frames_eval,
                 batch_size_eval=batch_size_eval,
                 window_aggregation=window_aggregation,
                 logger=logger,
+                per_epoch_eval_fn=per_epoch_eval_fn,
             )
             aucs.append(auc)
         except Exception as exc:
@@ -321,7 +343,7 @@ def run_config_seeds(
 # CSV output
 # ---------------------------------------------------------------------------
 
-_CSV_FIELDS = [
+_CSV_FIELDS_BASE = [
     'final_rank', 'trial', 'val_auc_search',
     'mean_test_auc', 'std_test_auc', 'min_test_auc', 'max_test_auc',
     'n_completed',
@@ -337,12 +359,19 @@ def write_results_csv(summaries: list, out_path: Path):
     for rank, s in enumerate(summaries, start=1):
         s['final_rank'] = rank
 
+    # Determine max number of seeds across all summaries for column names.
+    max_seeds = max((len(s.get('aucs', [])) for s in summaries), default=0)
+    seed_fields = [f'seed_{i}_auc' for i in range(max_seeds)]
+    fieldnames = _CSV_FIELDS_BASE + seed_fields
+
     with open(out_path, 'w', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=_CSV_FIELDS, extrasaction='ignore')
+        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction='ignore')
         writer.writeheader()
         for s in summaries:
             row = {k: ('' if isinstance(s.get(k), float) and np.isnan(s.get(k)) else s.get(k, ''))
-                   for k in _CSV_FIELDS}
+                   for k in _CSV_FIELDS_BASE}
+            for i, auc in enumerate(s.get('aucs', [])):
+                row[f'seed_{i}_auc'] = auc
             writer.writerow(row)
 
     return summaries
@@ -354,10 +383,25 @@ def write_results_csv(summaries: list, out_path: Path):
 
 def main():
     args = parse_args()
-    study_dir      = Path(args.study_dir)
-    catalogue_file = Path(args.catalogue_file)
-    out_dir        = Path(args.out_dir)
-    seeds          = list(range(args.base_seed, args.base_seed + args.n_seeds))
+    with open(args.config) as f:
+        cfg = yaml.safe_load(f)
+
+    study_dir      = Path(cfg['study_dir'])
+    catalogue_file = Path(cfg['catalogue_file'])
+    out_dir        = Path(cfg['out_dir'])
+    top_k          = int(cfg.get('top_k', 10))
+    n_seeds        = int(cfg['n_seeds'])
+    base_seed      = int(cfg.get('base_seed', 0))
+    seeds          = list(range(base_seed, base_seed + n_seeds))
+    num_epochs     = cfg.get('num_epochs', None)
+    batch_size_eval         = int(cfg.get('batch_size_eval', 64))
+    aggregation             = cfg.get('window_aggregation', 'mean')
+    early_stopping_patience = int(cfg.get('early_stopping_patience', 0))
+    val_catalogue_file      = cfg.get('val_catalogue_file', None)
+    val_split_file          = cfg.get('val_split_file', None)
+    val_split               = cfg.get('val_split', 'val')
+    test_split_file         = cfg['test_split_file']
+    test_split              = cfg.get('test_split', 'test')
 
     out_dir.mkdir(parents=True, exist_ok=True)
     logger = create_logger(str(out_dir / 'retrain_top_k.log'))
@@ -365,69 +409,88 @@ def main():
     logger.info(f"  study_dir      : {study_dir}")
     logger.info(f"  catalogue_file : {catalogue_file}")
     logger.info(f"  out_dir        : {out_dir}")
-    logger.info(f"  top_k={args.top_k}  n_seeds={args.n_seeds}  seeds={seeds}")
-    logger.info(f"  num_epochs_override={args.num_epochs}  "
-                f"batch_size_eval={args.batch_size_eval}  aggregation={args.window_aggregation}")
+    logger.info(f"  top_k={top_k}  n_seeds={n_seeds}  seeds={seeds}")
+    logger.info(f"  num_epochs_override={num_epochs}  "
+                f"batch_size_eval={batch_size_eval}  aggregation={aggregation}")
+    logger.info(f"  early_stopping_patience={early_stopping_patience}")
+    logger.info(f"  test_split_file={test_split_file}  test_split={test_split}")
+    if val_catalogue_file:
+        logger.info(f"  val_catalogue_file={val_catalogue_file}")
+        logger.info(f"  val_split_file={val_split_file}  val_split={val_split}")
+        if not val_split_file:
+            raise ValueError("val_split_file is required when val_catalogue_file is set")
 
-    top_k_df = get_top_k_trials(study_dir, args.top_k)
+    val_eval_args = {
+        'val_catalogue_file': str(REPO_ROOT / val_catalogue_file) if val_catalogue_file else None,
+        'val_split_file':     str(REPO_ROOT / val_split_file) if val_split_file else None,
+        'val_split':          val_split,
+    }
+    abs_test_split_file = str(REPO_ROOT / test_split_file)
+
+    top_k_df = get_top_k_trials(study_dir, top_k)
     logger.info(f"Trials selected: {top_k_df['number'].tolist()}")
 
     summaries = []
 
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        split_csv = make_split_csv(catalogue_file, tmp_dir)
-        logger.info(f"Derived split CSV from catalogue (all → split=test): {split_csv}")
+    for _, trial_row in top_k_df.iterrows():
+        trial_num = int(trial_row['number'])
+        val_auc   = float(trial_row['value'])
+        logger.info(f"=== trial_{trial_num:04d}  val_auc_search={val_auc:.4f} ===")
 
-        for _, trial_row in top_k_df.iterrows():
-            trial_num   = int(trial_row['number'])
-            val_auc     = float(trial_row['value'])
-            logger.info(f"=== trial_{trial_num:04d}  val_auc_search={val_auc:.4f} ===")
-
-            try:
-                summary = run_config_seeds(
-                    trial_num=trial_num,
-                    val_auc_search=val_auc,
-                    seeds=seeds,
-                    study_dir=study_dir,
-                    out_dir=out_dir,
-                    catalogue_file=catalogue_file,
-                    split_csv=split_csv,
-                    num_epochs_override=args.num_epochs,
-                    batch_size_eval=args.batch_size_eval,
-                    window_aggregation=args.window_aggregation,
-                    logger=logger,
-                )
-            except FileNotFoundError as exc:
-                logger.warning(f"Skipping trial_{trial_num:04d}: {exc}")
-                summary = {
-                    'trial': trial_num, 'val_auc_search': val_auc,
-                    'seeds': seeds, 'aucs': [], 'n_completed': 0,
-                    'mean_test_auc': float('nan'), 'std_test_auc': float('nan'),
-                    'min_test_auc': float('nan'), 'max_test_auc': float('nan'),
-                }
-
-            summaries.append(summary)
-            logger.info(
-                f"  → mean={summary['mean_test_auc']:.4f}  "
-                f"std={summary['std_test_auc']:.4f}  "
-                f"n={summary['n_completed']}"
+        try:
+            summary = run_config_seeds(
+                trial_num=trial_num,
+                val_auc_search=val_auc,
+                seeds=seeds,
+                study_dir=study_dir,
+                out_dir=out_dir,
+                catalogue_file=catalogue_file,
+                test_split_file=abs_test_split_file,
+                test_split=test_split,
+                num_epochs_override=num_epochs,
+                batch_size_eval=batch_size_eval,
+                window_aggregation=aggregation,
+                logger=logger,
+                val_eval_args=val_eval_args,
+                early_stopping_patience=early_stopping_patience,
             )
+        except FileNotFoundError as exc:
+            logger.warning(f"Skipping trial_{trial_num:04d}: {exc}")
+            summary = {
+                'trial': trial_num, 'val_auc_search': val_auc,
+                'seeds': seeds, 'aucs': [], 'n_completed': 0,
+                'mean_test_auc': float('nan'), 'std_test_auc': float('nan'),
+                'min_test_auc': float('nan'), 'max_test_auc': float('nan'),
+            }
+
+        summaries.append(summary)
+        logger.info(
+            f"  → mean={summary['mean_test_auc']:.4f}  "
+            f"std={summary['std_test_auc']:.4f}  "
+            f"n={summary['n_completed']}"
+        )
 
     ranked = write_results_csv(summaries, out_dir / 'results.csv')
     logger.info(f"Wrote results.csv")
 
     run_cfg_out = {
-        'evaluated_utc':    datetime.now(timezone.utc).isoformat(),
-        'study_dir':        str(study_dir),
-        'catalogue_file':   str(catalogue_file),
-        'out_dir':          str(out_dir),
-        'top_k':            args.top_k,
-        'n_seeds':          args.n_seeds,
-        'seeds':            seeds,
-        'base_seed':        args.base_seed,
-        'num_epochs_override': args.num_epochs,
-        'batch_size_eval':  args.batch_size_eval,
-        'window_aggregation': args.window_aggregation,
+        'evaluated_utc':            datetime.now(timezone.utc).isoformat(),
+        'study_dir':                str(study_dir),
+        'catalogue_file':           str(catalogue_file),
+        'out_dir':                  str(out_dir),
+        'top_k':                    top_k,
+        'n_seeds':                  n_seeds,
+        'seeds':                    seeds,
+        'base_seed':                base_seed,
+        'num_epochs_override':      num_epochs,
+        'batch_size_eval':          batch_size_eval,
+        'window_aggregation':       aggregation,
+        'early_stopping_patience':  early_stopping_patience,
+        'val_catalogue_file':       val_catalogue_file,
+        'val_split_file':           val_split_file,
+        'val_split':                val_split,
+        'test_split_file':          test_split_file,
+        'test_split':               test_split,
     }
     with open(out_dir / 'run_config.json', 'w') as f:
         json.dump(run_cfg_out, f, indent=2)

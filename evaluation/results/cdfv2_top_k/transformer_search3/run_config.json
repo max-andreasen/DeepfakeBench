@@ -1,0 +1,25 @@
+{
+  "evaluated_utc": "2026-04-28T08:01:59.483827+00:00",
+  "study_dir": "training/searches/runs/transformer_search3",
+  "catalogue_file": "clip/embeddings/benchmarks/cdfv2_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv",
+  "split_file": "datasets/splits/Celeb-DF-v2.csv",
+  "split": "test",
+  "out_dir": "evaluation/results/cdfv2_top_k/transformer_search3",
+  "top_k": 10,
+  "num_frames": 32,
+  "batch_size": 64,
+  "window_aggregation": "mean",
+  "trials_evaluated": [
+    801,
+    115,
+    446,
+    99,
+    600,
+    287,
+    284,
+    750,
+    433,
+    470
+  ],
+  "trials_skipped": []
+}

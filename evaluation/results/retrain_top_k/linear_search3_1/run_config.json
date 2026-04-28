@@ -1,0 +1,25 @@
+{
+  "evaluated_utc": "2026-04-28T16:21:23.387790+00:00",
+  "study_dir": "training/searches/runs/linear_search3_1",
+  "catalogue_file": "clip/embeddings/benchmarks/cdfv2_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv",
+  "out_dir": "evaluation/results/retrain_top_k/linear_search3_1",
+  "top_k": 1,
+  "n_seeds": 5,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "base_seed": 0,
+  "num_epochs_override": null,
+  "batch_size_eval": 64,
+  "window_aggregation": "mean",
+  "early_stopping_patience": 5,
+  "val_catalogue_file": "clip/embeddings/benchmarks/cdfv2_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv",
+  "val_split_file": "datasets/splits/Celeb-DF-v2-clean.csv",
+  "val_split": "val",
+  "test_split_file": "datasets/splits/Celeb-DF-v2-clean.csv",
+  "test_split": "test"
+}

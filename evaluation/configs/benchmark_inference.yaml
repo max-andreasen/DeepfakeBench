@@ -1,0 +1,31 @@
+# benchmark_inference.yaml
+#
+# Config for benchmark_inference.py — runs all saved seed models from a
+# retrain_top_k output dir through every listed benchmark.
+#
+# Fill in retrain_dir and out_dir, then list the benchmarks you want to run.
+# For cross-dataset benchmarks (CDFv2, CDFv3, WDF) omit split_file — the
+# script derives split=test from the catalogue automatically.
+# For FF++ test split, provide split_file and split explicitly.
+
+retrain_dir: evaluation/results/retrain_top_k/FILL_IN
+out_dir:     evaluation/results/benchmark_inference/FILL_IN
+
+benchmarks:
+  - name: CDFv2
+    catalogue_file: clip/embeddings/benchmarks/cdfv2_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+
+  # - name: FF++_test
+  #   catalogue_file: clip/embeddings/ff_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+  #   split_file: datasets/splits/FaceForensics++.csv
+  #   split: test
+
+  # - name: CDFv3
+  #   catalogue_file: clip/embeddings/benchmarks/cdfv3_layer16/.../catalogue.csv
+
+  # - name: WDF
+  #   catalogue_file: clip/embeddings/benchmarks/wdf_layer16/.../catalogue.csv
+
+num_frames: 32
+batch_size: 64
+window_aggregation: mean   # mean | max | softmax

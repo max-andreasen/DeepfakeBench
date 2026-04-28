@@ -69,7 +69,7 @@ Tester = _eval_tester.Tester
 #   - linear     top-10: adamw 10/10 + cosine_warmup 10/10 → pin both
 # Kept as categoricals even when single-valued so Optuna still logs the choice.
 OPT_CHOICES = {
-    'transformer': ['adam'],
+    'transformer': ['adam', 'adamw'],
     'bigru':       ['adam', 'adamw'],
     'linear':      ['adamw'],
 }
@@ -81,9 +81,9 @@ SCHED_CHOICES = {
 
 
 CLIP_LAYER_CHOICES = {
-    'linear':      ['block_16'],
+    'linear':      ['block_12', 'block_16', 'block_20', 'pre_proj'],
     'bigru':       ['block_12', 'block_16', 'block_20', 'pre_proj'],
-    'transformer': ['block_16'],
+    'transformer': ['block_12', 'block_16', 'block_20', 'pre_proj'],
 }
 CLIP_CATALOGUE_TEMPLATE = 'clip/embeddings/probing/ViT-L-14-336-quickgelu/{layer}/catalogue.csv'
 
@@ -157,11 +157,18 @@ def build_trial_config(base_config, overrides, search_epochs, trial_dir):
 def evaluate_on_split(model, config, split, logger):
     """Run Tester.evaluate on a given split. Returns result dict.
     num_workers=0 on the loader so DataLoader doesn't try to pickle an
-    importlib-loaded dataset class across worker processes."""
+    importlib-loaded dataset class across worker processes.
+
+    If val_catalogue_file / val_split_file / val_split are present in config,
+    those override catalogue_file / split_file / split for the objective eval.
+    This lets the search optimise CDFv2 AUC while training on FF++."""
     root = config.get('root_dir', '')
+    catalogue_file = config.get('val_catalogue_file', config['catalogue_file'])
+    split_file     = config.get('val_split_file',     config['split_file'])
+    split          = config.get('val_split',          split)
     dataset = DeepfakeTestDataset(
-        split_file=os.path.join(root, config['split_file']),
-        catalogue_file=os.path.join(root, config['catalogue_file']),
+        split_file=os.path.join(root, split_file),
+        catalogue_file=os.path.join(root, catalogue_file),
         num_frames=config['num_frames']['val'],
         split=split,
         input_transform=config.get('input_transform', 'none'),
@@ -200,14 +207,26 @@ def objective(trial, base_config, study_dir, search_epochs, top_k):
     overrides = search_space(trial, base_config['model_type'])
     config = build_trial_config(base_config, overrides, search_epochs, trial_dir)
 
+    # If val_catalogue_file is set, build a per-epoch eval function so that
+    # Optuna pruning and per-epoch logging use the held-out dataset AUC
+    # (e.g. CDFv2) rather than the FF++ val AUC.
+    per_epoch_eval_fn = None
+    if 'val_catalogue_file' in config:
+        def per_epoch_eval_fn(model, logger):
+            result = evaluate_on_split(model, config, split='val', logger=logger)
+            return result['per_video']['auc']
+
     # train — per-epoch pruning via train_from_config
     try:
-        result = train_from_config(config, trial=trial, log_path=trial_dir)
+        result = train_from_config(
+            config, trial=trial, log_path=trial_dir,
+            per_epoch_eval_fn=per_epoch_eval_fn,
+        )
     except optuna.TrialPruned:
         _free_gpu()
         raise
 
-    # full Tester eval on val — this is the objective the study optimizes.
+    # Final Tester eval — same dataset as per_epoch_eval_fn if set, else FF++ val.
     # Reuse the trial's training.log so all messages land in one file.
     eval_logger = create_logger(str(Path(trial_dir) / 'training.log'))
     val_results = evaluate_on_split(result['model'], config, split='val', logger=eval_logger)

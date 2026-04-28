@@ -113,16 +113,20 @@ def build_log_path(config, task_target=""):
     return os.path.join(config['log_dir'], config['model_type'] + task_str + '_' + timenow)
 
 
-def train_from_config(config, trial=None, log_path=None):
+def train_from_config(config, trial=None, log_path=None, per_epoch_eval_fn=None):
     """Run a full training loop from a merged config dict.
 
     Args:
-        config:   merged config dict (not a YAML path).
-        trial:    optional optuna.Trial. If provided, per-epoch val AUROC is
-                  reported via trial.report() and optuna.TrialPruned is raised
-                  when trial.should_prune() is True.
-        log_path: explicit output directory. If None, a timestamped one is
-                  built under config['log_dir'] (the legacy behavior).
+        config:             merged config dict (not a YAML path).
+        trial:              optional optuna.Trial. If provided, per-epoch AUC is
+                            reported via trial.report() and optuna.TrialPruned is
+                            raised when trial.should_prune() is True.
+        log_path:           explicit output directory. If None, a timestamped one
+                            is built under config['log_dir'] (the legacy behavior).
+        per_epoch_eval_fn:  optional callable(model, logger) -> float. When set,
+                            its return value is used as the Optuna objective AUC
+                            instead of the FF++ val AUC. Lets param-search optimise
+                            a held-out dataset (e.g. CDFv2) per epoch for pruning.
 
     Returns dict with keys:
         'model':            trained nn.Module (moved to CPU so GPU memory can
@@ -143,11 +147,14 @@ def train_from_config(config, trial=None, log_path=None):
     logger = create_logger(os.path.join(log_path, 'training.log'))
     model_type = config['model_type']
     embed_dim = config['model'][model_type].get('clip_embed_dim', '?')
-    logger.info(f"CLIP embeddings: {config['catalogue_file']}  (dim={embed_dim})")
-    logger.info(f"Data split: {config['split_file']}")
+    logger.info(f"CLIP embeddings (train): {config['catalogue_file']}  (dim={embed_dim})")
+    logger.info(f"Data split (train): {config['split_file']}")
     logger.info(f"  train: {config['num_frames']['train']} frames/video, batch_size={config['batchSize']['train']}")
     logger.info(f"  val:   {config['num_frames']['val']} frames/video, batch_size={config['batchSize']['val']}")
     logger.info(f"  input_transform: {config.get('input_transform', 'none')}")
+    if 'val_catalogue_file' in config:
+        logger.info(f"CLIP embeddings (Optuna objective): {config['val_catalogue_file']}")
+        logger.info(f"  split_file: {config['val_split_file']}  split: {config.get('val_split', 'val')}")
     logger.info(f"Config: {config}")
 
     train_loader = prepare_data(config, 'train')
@@ -162,9 +169,13 @@ def train_from_config(config, trial=None, log_path=None):
 
     trainer = Trainer(config, model, optimizer, scheduler, logger)
 
+    patience = int(config.get('early_stopping_patience', 0))  # 0 = disabled
+    epochs_no_improve = 0
     best_val_auroc = 0.0
+    best_state_dict = None
     final_val_auroc = 0.0
     epochs_completed = 0
+    epoch_aucs = []
     pruned = False
 
     try:
@@ -172,30 +183,56 @@ def train_from_config(config, trial=None, log_path=None):
             auc = trainer.train_epoch(
                 epoch=epoch,
                 train_dataloader=train_loader,
-                val_dataloader=val_loader,
+                val_dataloader=val_loader if config.get('eval_ff_val', True) else None,
             )
             if scheduler is not None:
                 scheduler.step()
 
             final_val_auroc = float(auc) if auc is not None else 0.0
-            best_val_auroc = max(best_val_auroc, final_val_auroc)
             epochs_completed = epoch + 1
+
+            if per_epoch_eval_fn is not None:
+                objective_auc = per_epoch_eval_fn(model, logger)
+                logger.info(f"  [epoch {epoch}] objective AUC = {objective_auc:.4f}")
+            else:
+                objective_auc = final_val_auroc
+
+            epoch_aucs.append(objective_auc)
+
+            if objective_auc > best_val_auroc:
+                best_val_auroc = objective_auc
+                best_state_dict = {k: v.cpu().clone() for k, v in model.state_dict().items()}
+                epochs_no_improve = 0
+                logger.info(f"  [epoch {epoch}] new best objective AUC = {best_val_auroc:.4f}")
+            else:
+                epochs_no_improve += 1
+                if patience > 0 and epochs_no_improve >= patience:
+                    logger.info(
+                        f"Early stopping at epoch {epoch}: no improvement for {patience} epochs."
+                    )
+                    break
 
             if trial is not None:
                 import optuna  # deferred so train.py doesn't hard-depend on optuna
-                trial.report(final_val_auroc, epoch)
+                trial.report(objective_auc, epoch)
                 if trial.should_prune():
                     pruned = True
                     raise optuna.TrialPruned()
     finally:
-        # run_config.json captures what was attempted, pruned or not.
-        trainer.save_run_config(os.path.join(log_path, 'run_config.json'))
+        # Restore best weights before saving/returning.
+        if best_state_dict is not None:
+            model.load_state_dict({k: v.to(next(model.parameters()).device)
+                                   for k, v in best_state_dict.items()})
+        trainer.save_run_config(os.path.join(log_path, 'run_config.json'), extra={
+            'epochs_completed': epochs_completed,
+            'best_val_auroc': best_val_auroc,
+        })
         if not pruned and config.get('save_ckpt', True):
             trainer.save_ckpt(os.path.join(log_path, 'model.pth'))
         model.cpu()
         logger.info(
             "Training pruned at epoch {}.".format(epochs_completed) if pruned
-            else "Training complete."
+            else f"Training complete. Best objective AUC = {best_val_auroc:.4f}"
         )
 
     return {
@@ -204,6 +241,7 @@ def train_from_config(config, trial=None, log_path=None):
         'best_val_auroc': best_val_auroc,
         'final_val_auroc': final_val_auroc,
         'epochs_completed': epochs_completed,
+        'epoch_aucs': epoch_aucs,
     }
 
 

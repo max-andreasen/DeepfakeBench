@@ -1,0 +1,111 @@
+{
+  "timestamp": "2026-04-28T10:25:27",
+  "study_name": "transformer_search_cdfv2_val_1",
+  "base_config_path": "/home/max-andreasen/GitHub/DeepfakeBench/training/configs/transformer_optuna_block16_cdfv2_val.yaml",
+  "model_type": "transformer",
+  "cli_args": {
+    "n_trials": 250,
+    "search_epochs": 30,
+    "top_k": 10,
+    "pruner": "median",
+    "seed": 42,
+    "timeout": null,
+    "storage": "/home/max-andreasen/GitHub/DeepfakeBench/training/searches/optuna_studies.db"
+  },
+  "sampler": "TPESampler(multivariate=True)",
+  "search_space": {
+    "common": {
+      "clip_layer": {
+        "type": "categorical",
+        "choices": [
+          "block_16"
+        ]
+      },
+      "optimizer_type": {
+        "type": "categorical",
+        "choices": [
+          "adam"
+        ]
+      },
+      "lr_scheduler": {
+        "type": "categorical",
+        "choices": [
+          "cosine"
+        ]
+      },
+      "warmup_epochs": {
+        "type": "int",
+        "range": [
+          4,
+          14
+        ],
+        "conditional_on": {
+          "lr_scheduler": "cosine_warmup"
+        }
+      },
+      "lr": {
+        "type": "float",
+        "range": [
+          2.5e-05,
+          0.001
+        ],
+        "log": true
+      },
+      "weight_decay": {
+        "type": "float",
+        "range": [
+          1e-06,
+          0.1
+        ],
+        "log": true
+      }
+    },
+    "model": {
+      "num_layers": {
+        "type": "int",
+        "range": [
+          6,
+          14
+        ]
+      },
+      "n_heads": {
+        "type": "categorical",
+        "choices": [
+          2,
+          8,
+          16,
+          32
+        ]
+      },
+      "dim_feedforward": {
+        "type": "categorical",
+        "choices": [
+          1024
+        ]
+      },
+      "attn_dropout": {
+        "type": "float",
+        "range": [
+          0.2,
+          0.7
+        ]
+      },
+      "mlp_dropout": {
+        "type": "float",
+        "range": [
+          0.0,
+          0.4
+        ]
+      },
+      "mlp_hidden_dim": {
+        "type": "categorical",
+        "choices": [
+          512,
+          1024,
+          2048,
+          3072
+        ]
+      }
+    }
+  }
+}

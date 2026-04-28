@@ -58,11 +58,12 @@ class Trainer:
         torch.save(self.model.state_dict(), path)
         self.logger.info(f"Saved model weights to {path}")
 
-    def save_run_config(self, path):
+    def save_run_config(self, path, extra=None):
         """
         Write a curated run_config.json capturing what's needed to reproduce /
         interpret this training run (model kwargs, optimizer, scheduler, data paths, etc.).
         The full YAML is also in training.log; this is the machine-readable summary.
+        Pass extra={...} to merge additional fields (e.g. epochs_completed, best_val_auroc).
         """
         cfg = self.config
         model_type = cfg.get('model_type')
@@ -94,6 +95,8 @@ class Trainer:
             },
             'device': str(self.device),
         }
+        if extra:
+            run_config.update(extra)
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(run_config, f, indent=2)
         self.logger.info(f"Saved run config to {path}")

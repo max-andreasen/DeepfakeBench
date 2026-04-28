@@ -1,0 +1,13 @@
+2026-04-28 18:11:07,877 - INFO - === retrain_top_k ===
+2026-04-28 18:11:07,877 - INFO -   study_dir      : training/searches/runs/bigru_search2_1
+2026-04-28 18:11:07,877 - INFO -   catalogue_file : clip/embeddings/benchmarks/cdfv2_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+2026-04-28 18:11:07,877 - INFO -   out_dir        : evaluation/results/retrain_top_k/bigru_search2
+2026-04-28 18:11:07,877 - INFO -   top_k=1  n_seeds=5  seeds=[0, 1, 2, 3, 4]
+2026-04-28 18:11:07,877 - INFO -   num_epochs_override=None  batch_size_eval=64  aggregation=mean
+2026-04-28 18:11:07,877 - INFO -   early_stopping_patience=10
+2026-04-28 18:11:07,877 - INFO -   test_split_file=datasets/splits/Celeb-DF-v2-clean.csv  test_split=test
+2026-04-28 18:11:07,877 - INFO -   val_catalogue_file=clip/embeddings/benchmarks/cdfv2_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+2026-04-28 18:11:07,877 - INFO -   val_split_file=datasets/splits/Celeb-DF-v2-clean.csv  val_split=val
+2026-04-28 18:11:07,892 - INFO - Trials selected: [1]
+2026-04-28 18:11:07,892 - INFO - === trial_0001  val_auc_search=0.9517 ===
+2026-04-28 18:11:07,892 - INFO -   [trial_0001 | seed=0]

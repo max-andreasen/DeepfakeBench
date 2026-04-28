@@ -1,0 +1,20 @@
+study_dir: training/searches/runs/transformer_search3
+catalogue_file: clip/embeddings/benchmarks/cdfv2_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+out_dir: evaluation/results/retrain_top_k/transformer_search3_10
+
+top_k: 1
+n_seeds: 5
+base_seed: 0
+
+# num_epochs: null  # uncomment to override epochs from run_config.json
+batch_size_eval: 64
+window_aggregation: mean
+
+# CDFv2 val for early stopping (hyperparams still from FF++ search)
+val_catalogue_file: clip/embeddings/benchmarks/cdfv2_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+val_split_file: datasets/splits/Celeb-DF-v2-clean.csv
+val_split: val
+early_stopping_patience: 10
+
+test_split_file: datasets/splits/Celeb-DF-v2-clean.csv
+test_split: test

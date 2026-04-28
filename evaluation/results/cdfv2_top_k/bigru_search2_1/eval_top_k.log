@@ -1,0 +1,55 @@
+2026-04-28 10:11:40,425 - INFO - === eval_top_k ===
+2026-04-28 10:11:40,425 - INFO -   study_dir        : training/searches/runs/bigru_search2_1
+2026-04-28 10:11:40,425 - INFO -   catalogue_file   : clip/embeddings/benchmarks/cdfv2_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+2026-04-28 10:11:40,425 - INFO -   out_dir          : evaluation/results/cdfv2_top_k/bigru_search2_1
+2026-04-28 10:11:40,425 - INFO -   top_k=10  num_frames=32  batch_size=64  aggregation=mean
+2026-04-28 10:11:40,440 - INFO - Trials to evaluate: [1, 415, 24, 263, 840, 13, 261, 763, 194, 175]
+2026-04-28 10:11:40,440 - INFO -   split_file=datasets/splits/Celeb-DF-v2.csv  split=test
+2026-04-28 10:11:40,440 - INFO - --- [1/10] trial_0001  val_auc=0.9517 ---
+2026-04-28 10:11:40,859 - INFO - Evaluating (standard)...
+2026-04-28 10:11:41,470 - INFO -   per-window: acc=0.6461  auc=0.6779  loss=1.0331
+2026-04-28 10:11:41,470 - INFO -   per-video : acc=0.6660  auc=0.6844  acc@best=0.6718 (thr=0.461)
+2026-04-28 10:11:41,537 - INFO - --- [2/10] trial_0415  val_auc=0.9503 ---
+2026-04-28 10:11:41,815 - INFO - Evaluating (standard)...
+2026-04-28 10:11:42,363 - INFO -   per-window: acc=0.6519  auc=0.6743  loss=1.3479
+2026-04-28 10:11:42,363 - INFO -   per-video : acc=0.6583  auc=0.6768  acc@best=0.6699 (thr=0.343)
+2026-04-28 10:11:42,431 - INFO - --- [3/10] trial_0024  val_auc=0.9502 ---
+2026-04-28 10:11:42,557 - INFO - Evaluating (standard)...
+2026-04-28 10:11:43,121 - INFO -   per-window: acc=0.6441  auc=0.6696  loss=0.9811
+2026-04-28 10:11:43,121 - INFO -   per-video : acc=0.6583  auc=0.6756  acc@best=0.6602 (thr=0.458)
+2026-04-28 10:11:43,186 - INFO - --- [4/10] trial_0263  val_auc=0.9501 ---
+2026-04-28 10:11:43,431 - INFO - Evaluating (standard)...
+2026-04-28 10:11:44,011 - INFO -   per-window: acc=0.6544  auc=0.6654  loss=0.9517
+2026-04-28 10:11:44,011 - INFO -   per-video : acc=0.6506  auc=0.6718  acc@best=0.6757 (thr=0.330)
+2026-04-28 10:11:44,077 - INFO - --- [5/10] trial_0840  val_auc=0.9500 ---
+2026-04-28 10:11:44,275 - INFO - Evaluating (standard)...
+2026-04-28 10:11:44,840 - INFO -   per-window: acc=0.6544  auc=0.6813  loss=1.1884
+2026-04-28 10:11:44,840 - INFO -   per-video : acc=0.6641  auc=0.6870  acc@best=0.6525 (thr=0.322)
+2026-04-28 10:11:44,906 - INFO - --- [6/10] trial_0013  val_auc=0.9499 ---
+2026-04-28 10:11:45,068 - INFO - Evaluating (standard)...
+2026-04-28 10:11:45,618 - INFO -   per-window: acc=0.6261  auc=0.6669  loss=1.0431
+2026-04-28 10:11:45,619 - INFO -   per-video : acc=0.6332  auc=0.6733  acc@best=0.6795 (thr=0.649)
+2026-04-28 10:11:45,691 - INFO - --- [7/10] trial_0261  val_auc=0.9498 ---
+2026-04-28 10:11:45,919 - INFO - Evaluating (standard)...
+2026-04-28 10:11:46,511 - INFO -   per-window: acc=0.6345  auc=0.6610  loss=1.1943
+2026-04-28 10:11:46,511 - INFO -   per-video : acc=0.6602  auc=0.6656  acc@best=0.6255 (thr=0.257)
+2026-04-28 10:11:46,584 - INFO - --- [8/10] trial_0763  val_auc=0.9496 ---
+2026-04-28 10:11:47,097 - INFO - Evaluating (standard)...
+2026-04-28 10:11:47,713 - INFO -   per-window: acc=0.6409  auc=0.6628  loss=1.1376
+2026-04-28 10:11:47,713 - INFO -   per-video : acc=0.6641  auc=0.6670  acc@best=0.6293 (thr=0.233)
+2026-04-28 10:11:47,783 - INFO - --- [9/10] trial_0194  val_auc=0.9496 ---
+2026-04-28 10:11:47,978 - INFO - Evaluating (standard)...
+2026-04-28 10:11:48,563 - INFO -   per-window: acc=0.6332  auc=0.6620  loss=1.1285
+2026-04-28 10:11:48,563 - INFO -   per-video : acc=0.6602  auc=0.6660  acc@best=0.6409 (thr=0.371)
+2026-04-28 10:11:48,629 - INFO - --- [10/10] trial_0175  val_auc=0.9495 ---
+2026-04-28 10:11:48,799 - INFO - Evaluating (standard)...
+2026-04-28 10:11:49,387 - INFO -   per-window: acc=0.6480  auc=0.6679  loss=1.5306
+2026-04-28 10:11:49,387 - INFO -   per-video : acc=0.6583  auc=0.6706  acc@best=0.6004 (thr=0.066)
+2026-04-28 10:11:49,453 - INFO - Wrote evaluation/results/cdfv2_top_k/bigru_search2_1/results.csv
+2026-04-28 10:11:49,453 - INFO - Wrote run_config.json
+2026-04-28 10:11:49,453 - INFO - === Top-5 by test AUC ===
+2026-04-28 10:11:49,453 - INFO -   rank=1  trial=840  val_auc=0.9500  test_auc=0.6870  acc=0.6641
+2026-04-28 10:11:49,453 - INFO -   rank=2  trial=1  val_auc=0.9517  test_auc=0.6844  acc=0.6660
+2026-04-28 10:11:49,453 - INFO -   rank=3  trial=415  val_auc=0.9503  test_auc=0.6768  acc=0.6583
+2026-04-28 10:11:49,453 - INFO -   rank=4  trial=24  val_auc=0.9502  test_auc=0.6756  acc=0.6583
+2026-04-28 10:11:49,453 - INFO -   rank=5  trial=13  val_auc=0.9499  test_auc=0.6733  acc=0.6332

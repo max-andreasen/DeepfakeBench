@@ -1,0 +1,18 @@
+study_dir: training/searches/runs/bigru_search2_1
+catalogue_file: clip/embeddings/benchmarks/cdfv2_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+out_dir: evaluation/results/retrain_top_k/bigru_search2
+
+top_k: 1
+n_seeds: 5
+base_seed: 0
+
+batch_size_eval: 64
+window_aggregation: mean
+
+val_catalogue_file: clip/embeddings/benchmarks/cdfv2_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+val_split_file: datasets/splits/Celeb-DF-v2-clean.csv
+val_split: val
+early_stopping_patience: 10
+
+test_split_file: datasets/splits/Celeb-DF-v2-clean.csv
+test_split: test

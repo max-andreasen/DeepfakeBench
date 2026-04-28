@@ -13,30 +13,21 @@ Outputs:
   <out_dir>/trial_XXXX/       — results.json + run_config.json copy per trial
   <out_dir>/eval_top_k.log    — full log
 
-CDFv2 (and other cross-dataset benchmarks) have no pre-existing split CSV
-because every video is a test video. This script derives the split from the
-catalogue itself: all rows become split=test.
-
 Usage (from repo root):
-    python evaluation/eval_top_k.py \\
-        --study_dir  training/searches/runs/transformer_search3 \\
-        --catalogue_file clip/embeddings/benchmarks/cdfv2_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv \\
-        --out_dir    evaluation/results/cdfv2_top_k/transformer_search3 \\
-        [--top_k 10] [--num_frames 32] [--batch_size 64] [--window_aggregation mean]
+    python evaluation/eval_top_k.py --config evaluation/configs/eval_top_k_transformer_search3.yaml
 """
 
 import argparse
 import csv
 import gc
 import json
-import os
 import sys
-import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
 import torch
+import yaml
 from torch.utils.data import DataLoader
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -63,21 +54,8 @@ def parse_args():
     p = argparse.ArgumentParser(
         description='Evaluate top-K param-search trials on a held-out dataset.'
     )
-    p.add_argument('--study_dir', required=True,
-                   help='Path to Optuna run dir (must contain all_trials.csv and trial_XXXX/)')
-    p.add_argument('--catalogue_file', required=True,
-                   help='Path to embedding catalogue CSV (the held-out benchmark)')
-    p.add_argument('--out_dir', required=True,
-                   help='Output directory (created if absent)')
-    p.add_argument('--top_k', type=int, default=10,
-                   help='Number of top trials to evaluate (default: 10)')
-    p.add_argument('--num_frames', type=int, default=32,
-                   help='Frames per sliding window; must match training T (default: 32)')
-    p.add_argument('--batch_size', type=int, default=64,
-                   help='Eval batch size in videos (default: 64)')
-    p.add_argument('--window_aggregation', default='mean',
-                   choices=['mean', 'max', 'softmax'],
-                   help='How to pool per-window logits to a per-video score (default: mean)')
+    p.add_argument('--config', required=True,
+                   help='Path to eval_top_k YAML config')
     return p.parse_args()
 
 
@@ -96,18 +74,6 @@ def get_top_k_trials(study_dir: Path, top_k: int) -> pd.DataFrame:
     return result
 
 
-def make_split_df(catalogue_file: Path) -> pd.DataFrame:
-    """Derive a split DataFrame from a catalogue: every video → split=test.
-
-    Used for datasets (CDFv2, CDFv3, WDF) that have no pre-existing split CSV
-    because all their videos are cross-dataset test material.
-    """
-    cat = pd.read_csv(catalogue_file)
-    join_keys = [k for k in ['dataset', 'label_cat', 'video_id'] if k in cat.columns]
-    split_df = cat[join_keys].copy()
-    split_df['split'] = 'test'
-    return split_df
-
 
 def build_loader(
     catalogue_file: Path,
@@ -115,12 +81,13 @@ def build_loader(
     num_frames: int,
     batch_size: int,
     input_transform: str,
+    split: str = 'test',
 ) -> DataLoader:
     dataset = DeepfakeTestDataset(
         split_file=split_csv_path,
         catalogue_file=str(catalogue_file),
         num_frames=num_frames,
-        split='test',
+        split=split,
         input_transform=input_transform,
     )
     return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=4)
@@ -174,6 +141,7 @@ def eval_trial(
     window_aggregation: str,
     out_dir: Path,
     logger,
+    split: str = 'test',
 ) -> dict:
     """Evaluate one trial. Returns the Tester result dict (per_video / per_window).
 
@@ -183,7 +151,7 @@ def eval_trial(
     model, run_config = load_model(trial_dir)
     input_transform = run_config.get('input_transform', 'none')
 
-    loader = build_loader(catalogue_file, split_csv_path, num_frames, batch_size, input_transform)
+    loader = build_loader(catalogue_file, split_csv_path, num_frames, batch_size, input_transform, split=split)
 
     eval_cfg = {'window_aggregation': window_aggregation}
     tester = Tester(eval_cfg, model, logger)
@@ -256,9 +224,17 @@ def write_results_csv(rows: list, out_path: Path):
 
 def main():
     args = parse_args()
-    study_dir = Path(args.study_dir)
-    catalogue_file = Path(args.catalogue_file)
-    out_dir = Path(args.out_dir)
+    with open(args.config) as f:
+        cfg = yaml.safe_load(f)
+
+    study_dir      = Path(cfg['study_dir'])
+    catalogue_file = Path(cfg['catalogue_file'])
+    out_dir        = Path(cfg['out_dir'])
+    top_k          = int(cfg.get('top_k', 10))
+    num_frames     = int(cfg.get('num_frames', 32))
+    batch_size     = int(cfg.get('batch_size', 64))
+    aggregation    = cfg.get('window_aggregation', 'mean')
+
     out_dir.mkdir(parents=True, exist_ok=True)
 
     logger = create_logger(str(out_dir / 'eval_top_k.log'))
@@ -266,24 +242,19 @@ def main():
     logger.info(f"  study_dir        : {study_dir}")
     logger.info(f"  catalogue_file   : {catalogue_file}")
     logger.info(f"  out_dir          : {out_dir}")
-    logger.info(f"  top_k={args.top_k}  num_frames={args.num_frames}  "
-                f"batch_size={args.batch_size}  aggregation={args.window_aggregation}")
+    logger.info(f"  top_k={top_k}  num_frames={num_frames}  "
+                f"batch_size={batch_size}  aggregation={aggregation}")
 
-    top_k_df = get_top_k_trials(study_dir, args.top_k)
+    top_k_df = get_top_k_trials(study_dir, top_k)
     logger.info(f"Trials to evaluate: {top_k_df['number'].tolist()}")
 
-    split_df = make_split_df(catalogue_file)
-    logger.info(f"Derived split from catalogue: {len(split_df)} videos (all → split=test)")
+    split_name = cfg.get('split', 'test')
+    split_csv_path = str(REPO_ROOT / cfg['split_file'])
+    logger.info(f"  split_file={cfg['split_file']}  split={split_name}")
 
-    # Write temp split CSV once; reused by all trials to avoid repeated writes.
-    # Cleaned up automatically when the TemporaryDirectory is closed.
     rows_collected = []
 
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        split_csv_path = os.path.join(tmp_dir, '_split.csv')
-        split_df.to_csv(split_csv_path, index=False)
-
-        for seq_rank, (_, trial_row) in enumerate(top_k_df.iterrows(), start=1):
+    for seq_rank, (_, trial_row) in enumerate(top_k_df.iterrows(), start=1):
             trial_num = int(trial_row['number'])
             val_auc = float(trial_row['value'])
             trial_dir = study_dir / f'trial_{trial_num:04d}'
@@ -295,11 +266,12 @@ def main():
                     trial_dir=trial_dir,
                     catalogue_file=catalogue_file,
                     split_csv_path=split_csv_path,
-                    num_frames=args.num_frames,
-                    batch_size=args.batch_size,
-                    window_aggregation=args.window_aggregation,
+                    num_frames=num_frames,
+                    batch_size=batch_size,
+                    window_aggregation=aggregation,
                     out_dir=out_dir,
                     logger=logger,
+                    split=split_name,
                 )
                 rows_collected.append(_row_from_result(seq_rank, trial_num, val_auc, result))
             except (FileNotFoundError, ValueError) as exc:
@@ -325,11 +297,13 @@ def main():
         'evaluated_utc': datetime.now(timezone.utc).isoformat(),
         'study_dir': str(study_dir),
         'catalogue_file': str(catalogue_file),
+        'split_file': cfg['split_file'],
+        'split': split_name,
         'out_dir': str(out_dir),
-        'top_k': args.top_k,
-        'num_frames': args.num_frames,
-        'batch_size': args.batch_size,
-        'window_aggregation': args.window_aggregation,
+        'top_k': top_k,
+        'num_frames': num_frames,
+        'batch_size': batch_size,
+        'window_aggregation': aggregation,
         'trials_evaluated': [r['trial'] for r in rows_collected if r['test_auc'] != ''],
         'trials_skipped':   [r['trial'] for r in rows_collected if r['test_auc'] == ''],
     }

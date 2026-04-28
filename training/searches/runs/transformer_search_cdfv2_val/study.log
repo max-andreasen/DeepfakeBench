@@ -1,0 +1,10 @@
+2026-04-28 10:13:32,889 - === Starting study 'transformer_search_cdfv2_val' ===
+2026-04-28 10:13:32,889 - CLI args: {'base_config': 'training/configs/transformer_optuna_block16_cdfv2_val.yaml', 'study_name': 'transformer_search_cdfv2_val', 'n_trials': 250, 'timeout': None, 'search_epochs': 30, 'top_k': 10, 'pruner': 'median', 'seed': 42, 'storage': '/home/max-andreasen/GitHub/DeepfakeBench/training/searches/optuna_studies.db'}
+2026-04-28 10:13:32,889 - base_config: /home/max-andreasen/GitHub/DeepfakeBench/training/configs/transformer_optuna_block16_cdfv2_val.yaml
+2026-04-28 10:13:32,889 - model_type: transformer
+2026-04-28 10:13:32,889 - catalogue_file: clip/embeddings/probing/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+2026-04-28 10:13:32,889 - input_transform: none
+2026-04-28 10:15:11,868 - [trial 0000] state=COMPLETE  value=0.6950  dur=  98.5s  best=0.6950 (#0)
+2026-04-28 10:16:38,948 - [trial 0001] state=COMPLETE  value=0.6777  dur=  86.9s  best=0.6950 (#0)
+2026-04-28 10:18:16,222 - [trial 0002] state=COMPLETE  value=0.6942  dur=  97.1s  best=0.6950 (#0)
+2026-04-28 10:19:44,654 - [trial 0003] state=COMPLETE  value=0.6573  dur=  88.3s  best=0.6950 (#0)
