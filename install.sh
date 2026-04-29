@@ -126,8 +126,10 @@ else
     "scikit-learn>=1.3,<1.5"
     "albumentations==1.3.1"
     "efficientnet-pytorch==0.7.1"
+    # segmentation-models-pytorch 0.3.3+ pins timm 0.9.x, while older
+    # detector code in this repo uses timm 0.6.x import paths.
     "timm==0.6.12"
-    "segmentation-models-pytorch>=0.3.3,<0.4"
+    "segmentation-models-pytorch==0.3.2"
     "torchtoolbox==0.1.8.2"
     "tensorboard>=2.13,<3"
     "loralib>=0.1.2"
