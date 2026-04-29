@@ -93,6 +93,14 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
             'DeepFakeDetection': 'DFD_fake',
             'DeepFakeDetection_original': 'DFD_real',
         }
+        target_fake_labels = {
+            'FaceForensics++': {'Deepfakes', 'Face2Face', 'FaceSwap', 'NeuralTextures'},
+            'DeepFakeDetection': {'DeepFakeDetection'},
+            'FaceShifter': {'FaceShifter'},
+        }[dataset_name]
+        scan_ff_real = dataset_name in {'FaceForensics++', 'FaceShifter'}
+        scan_dfd_real = dataset_name == 'DeepFakeDetection'
+
         # Load the JSON files for data split
         dataset_path = os.path.join(dataset_root_path, 'FaceForensics++')
 
@@ -125,54 +133,61 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
 
         # FaceForensics++ real dataset
         if os.path.isdir(dataset_path) and os.path.isdir(os.path.join(dataset_path, 'original_sequences')):
-            label = 'Real'
             dataset_dict['FaceForensics++'] = {}
-            dataset_dict['FaceForensics++']['FF-real'] = {}
-            dataset_dict['FaceForensics++']['DFD_real'] = {}
 
             # Iterate over all compression levels: c23, c40, raw
-            dataset_dict['FaceForensics++']['FF-real']['train'] = {}
-            dataset_dict['FaceForensics++']['FF-real']['test'] = {}
-            dataset_dict['FaceForensics++']['FF-real']['val'] = {}
-            for compression_level in os.scandir(os.path.join(dataset_path, 'original_sequences', 'youtube')):
-                if compression_level.is_dir():
-                    compression_level = compression_level.name
-                    dataset_dict['FaceForensics++']['FF-real']['train'][compression_level] = {}
-                    dataset_dict['FaceForensics++']['FF-real']['test'][compression_level] = {}
-                    dataset_dict['FaceForensics++']['FF-real']['val'][compression_level] = {}
+            if scan_ff_real:
+                label = 'Real'
+                dataset_dict['FaceForensics++']['FF-real'] = {}
+                dataset_dict['FaceForensics++']['FF-real']['train'] = {}
+                dataset_dict['FaceForensics++']['FF-real']['test'] = {}
+                dataset_dict['FaceForensics++']['FF-real']['val'] = {}
+                print("Scanning FaceForensics++ real videos...")
+                for compression_level in os.scandir(os.path.join(dataset_path, 'original_sequences', 'youtube')):
+                    if compression_level.is_dir():
+                        compression_level = compression_level.name
+                        dataset_dict['FaceForensics++']['FF-real']['train'][compression_level] = {}
+                        dataset_dict['FaceForensics++']['FF-real']['test'][compression_level] = {}
+                        dataset_dict['FaceForensics++']['FF-real']['val'][compression_level] = {}
 
-                # Iterate over all videos
-                for video_path in os.scandir(os.path.join(dataset_path, 'original_sequences', 'youtube', compression_level, frame_dir)):
-                    if video_path.is_dir():
-                        video_name = video_path.name
-                        mode = video_to_mode[video_name]
-                        frame_paths = [os.path.join(video_path, frame.name) for frame in os.scandir(video_path)]
-                        dataset_dict['FaceForensics++']['FF-real'][mode][compression_level][video_name] = {'label': ff_dict[label], 'frames': frame_paths}
+                    # Iterate over all videos
+                    for video_path in os.scandir(os.path.join(dataset_path, 'original_sequences', 'youtube', compression_level, frame_dir)):
+                        if video_path.is_dir():
+                            video_name = video_path.name
+                            mode = video_to_mode[video_name]
+                            frame_paths = [os.path.join(video_path, frame.name) for frame in os.scandir(video_path)]
+                            dataset_dict['FaceForensics++']['FF-real'][mode][compression_level][video_name] = {'label': ff_dict[label], 'frames': frame_paths}
 
-            label = 'DFD_Real'
             # Same operations for DeepfakeDetection real dataset
-            dataset_dict['FaceForensics++']['DFD_real']['train'] = {}
-            dataset_dict['FaceForensics++']['DFD_real']['test'] = {}
-            dataset_dict['FaceForensics++']['DFD_real']['val'] = {}
-            for compression_level in os.scandir(os.path.join(dataset_path, 'original_sequences', 'actors')):
-                if compression_level.is_dir() and compression_level.name in ["c23", "c40", "raw"]:
-                    compression_level = compression_level.name
-                    dataset_dict['FaceForensics++']['DFD_real']['train'][compression_level] = {}
-                    dataset_dict['FaceForensics++']['DFD_real']['test'][compression_level] = {}
-                    dataset_dict['FaceForensics++']['DFD_real']['val'][compression_level] = {}
-                # Iterate over all videos
-                for video_path in os.scandir(os.path.join(dataset_path, 'original_sequences', 'actors', compression_level, frame_dir)):
-                    if video_path.is_dir():
-                        video_name = video_path.name
-                        frame_paths = [os.path.join(video_path, frame.name) for frame in os.scandir(video_path)]
-                        dataset_dict['FaceForensics++']['DFD_real']['train'][compression_level][video_name] = {'label': ff_dict[label], 'frames': frame_paths}
-                        dataset_dict['FaceForensics++']['DFD_real']['test'][compression_level][video_name] = {'label': ff_dict[label], 'frames': frame_paths}
-                        dataset_dict['FaceForensics++']['DFD_real']['val'][compression_level][video_name] = {'label': ff_dict[label], 'frames': frame_paths}
+            if scan_dfd_real:
+                label = 'DFD_Real'
+                dataset_dict['FaceForensics++']['DFD_real'] = {}
+                dataset_dict['FaceForensics++']['DFD_real']['train'] = {}
+                dataset_dict['FaceForensics++']['DFD_real']['test'] = {}
+                dataset_dict['FaceForensics++']['DFD_real']['val'] = {}
+                print("Scanning DeepFakeDetection real videos...")
+                for compression_level in os.scandir(os.path.join(dataset_path, 'original_sequences', 'actors')):
+                    if compression_level.is_dir() and compression_level.name in ["c23", "c40", "raw"]:
+                        compression_level = compression_level.name
+                        dataset_dict['FaceForensics++']['DFD_real']['train'][compression_level] = {}
+                        dataset_dict['FaceForensics++']['DFD_real']['test'][compression_level] = {}
+                        dataset_dict['FaceForensics++']['DFD_real']['val'][compression_level] = {}
+                    # Iterate over all videos
+                    for video_path in os.scandir(os.path.join(dataset_path, 'original_sequences', 'actors', compression_level, frame_dir)):
+                        if video_path.is_dir():
+                            video_name = video_path.name
+                            frame_paths = [os.path.join(video_path, frame.name) for frame in os.scandir(video_path)]
+                            dataset_dict['FaceForensics++']['DFD_real']['train'][compression_level][video_name] = {'label': ff_dict[label], 'frames': frame_paths}
+                            dataset_dict['FaceForensics++']['DFD_real']['test'][compression_level][video_name] = {'label': ff_dict[label], 'frames': frame_paths}
+                            dataset_dict['FaceForensics++']['DFD_real']['val'][compression_level][video_name] = {'label': ff_dict[label], 'frames': frame_paths}
         # FaceForensics++ fake datasets
         if os.path.isdir(os.path.join(dataset_path, 'manipulated_sequences')):
             for label_dir in os.scandir(os.path.join(dataset_path, 'manipulated_sequences')):
                 if label_dir.is_dir():
                     label = label_dir.name
+                    if label not in target_fake_labels:
+                        continue
+                    print(f"Scanning {label} manipulated videos...")
                     dataset_dict['FaceForensics++'][ff_dict[label]] = {}
                     dataset_dict['FaceForensics++'][ff_dict[label]]['train'] = {}
                     dataset_dict['FaceForensics++'][ff_dict[label]]['test'] = {}
@@ -215,9 +230,9 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
         # get the DeepfakeDetection dataset from FaceForensics++ dataset
         if dataset_name == 'FaceForensics++':
             # Delete the DeepfakeDetection dataset from FaceForensics++ dataset
-            del dataset_dict['FaceForensics++']['DFD_fake']
-            del dataset_dict['FaceForensics++']['DFD_real']
-            del dataset_dict['FaceForensics++']['FF-FH']
+            dataset_dict['FaceForensics++'].pop('DFD_fake', None)
+            dataset_dict['FaceForensics++'].pop('DFD_real', None)
+            dataset_dict['FaceForensics++'].pop('FF-FH', None)
         elif dataset_name == 'DeepFakeDetection':
             # Check if the DeepfakeDetection dataset is in the FaceForensics++ dataset
             if 'DFD_fake' in dataset_dict['FaceForensics++'] and \

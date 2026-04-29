@@ -1,0 +1,8 @@
+2026-04-29 14:47:03,089 - INFO - ============================================================
+2026-04-29 14:47:03,090 - INFO - Starting run | config=configs/faceshifter_layer16.yaml | resume=False
+2026-04-29 14:47:03,090 - INFO - Dataset: FaceShifter  T=96  seed=1024  max_videos=None  device=cuda
+2026-04-29 14:47:03,090 - INFO - Model: ViT-L-14-336-quickgelu (pretrained=openai)
+2026-04-29 14:47:03,090 - INFO - Extract: blocks=[16], include_final=False
+2026-04-29 14:47:03,090 - INFO - Output dir: /home/max-andreasen/GitHub/DeepfakeBench/clip/embeddings/benchmarks/faceshifter_layer16/ViT-L-14-336-quickgelu
+2026-04-29 14:47:03,196 - INFO - Built DataFrame: 2000 videos
+2026-04-29 14:47:07,719 - INFO - Layers: ['pre_proj', 'block_16']  dims: {'pre_proj': 1024, 'block_16': 1024}

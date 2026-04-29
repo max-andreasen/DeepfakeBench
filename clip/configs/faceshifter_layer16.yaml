@@ -1,7 +1,7 @@
-dataset_name: DeepFakeDetection
-input_json: preprocessing/rearrangements/dataset_json_mtcnn/DeepFakeDetection.json
+dataset_name: FaceShifter
+input_json: preprocessing/rearrangements/dataset_json_mtcnn/FaceShifter.json
 
-output_base_dir: clip/embeddings/benchmarks/dfd_layer16
+output_base_dir: clip/embeddings/benchmarks/faceshifter_layer16
 
 model:
   name: ViT-L-14-336-quickgelu

@@ -1,0 +1,22 @@
+2026-04-29 13:10:18,688 - INFO - ============================================================
+2026-04-29 13:10:18,688 - INFO - Starting run | config=clip/configs/dfd_layer16.yaml | resume=False
+2026-04-29 13:10:18,688 - INFO - Dataset: DeepFakeDetection  T=96  seed=1024  max_videos=1  device=cpu
+2026-04-29 13:10:18,688 - INFO - Model: ViT-L-14-336-quickgelu (pretrained=openai)
+2026-04-29 13:10:18,688 - INFO - Extract: blocks=[16], include_final=False
+2026-04-29 13:10:18,688 - INFO - Output dir: /home/max-andreasen/GitHub/DeepfakeBench/clip/embeddings/benchmarks/dfd_layer16/ViT-L-14-336-quickgelu
+2026-04-29 13:11:16,443 - INFO - ============================================================
+2026-04-29 13:11:16,443 - INFO - Starting run | config=configs/dfd_layer16.yaml | resume=False
+2026-04-29 13:11:16,443 - INFO - Dataset: DeepFakeDetection  T=96  seed=1024  max_videos=None  device=cuda
+2026-04-29 13:11:16,443 - INFO - Model: ViT-L-14-336-quickgelu (pretrained=openai)
+2026-04-29 13:11:16,443 - INFO - Extract: blocks=[16], include_final=False
+2026-04-29 13:11:16,443 - INFO - Output dir: /home/max-andreasen/GitHub/DeepfakeBench/clip/embeddings/benchmarks/dfd_layer16/ViT-L-14-336-quickgelu
+2026-04-29 13:11:17,404 - INFO - Built DataFrame: 3392 videos
+2026-04-29 13:11:23,942 - INFO - Layers: ['pre_proj', 'block_16']  dims: {'pre_proj': 1024, 'block_16': 1024}
+2026-04-29 13:11:44,830 - INFO - ============================================================
+2026-04-29 13:11:44,830 - INFO - Starting run | config=clip/configs/dfd_layer16.yaml | resume=False
+2026-04-29 13:11:44,831 - INFO - Dataset: DeepFakeDetection  T=96  seed=1024  max_videos=1  device=cpu
+2026-04-29 13:11:44,831 - INFO - Model: ViT-L-14-336-quickgelu (pretrained=openai)
+2026-04-29 13:11:44,831 - INFO - Extract: blocks=[16], include_final=False
+2026-04-29 13:11:44,831 - INFO - Output dir: /home/max-andreasen/GitHub/DeepfakeBench/clip/embeddings/benchmarks/dfd_layer16/ViT-L-14-336-quickgelu
+2026-04-29 13:11:45,592 - INFO - Built DataFrame: 3392 videos
+2026-04-29 13:11:49,686 - INFO - Layers: ['pre_proj', 'block_16']  dims: {'pre_proj': 1024, 'block_16': 1024}

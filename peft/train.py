@@ -90,6 +90,12 @@ def build_loaders(cfg: dict, preprocess):
     rearrange_json = str(root / cfg["rearrange_json"])
     max_videos     = cfg.get("max_videos")
 
+    # Optional separate val dataset (e.g. CDFv2 while training on FF++).
+    val_split_file     = str(root / cfg["val_split_file"])     if "val_split_file"     in cfg else split_file
+    val_rearrange_json = str(root / cfg["val_rearrange_json"]) if "val_rearrange_json" in cfg else rearrange_json
+    val_dataset_name   = cfg.get("val_dataset_name", cfg["dataset_name"])
+    val_split          = cfg.get("val_split", "val")
+
     train_ds = FramePEFTDataset(
         split_file=split_file,
         rearrange_json=rearrange_json,
@@ -100,10 +106,10 @@ def build_loaders(cfg: dict, preprocess):
         max_videos=max_videos,
     )
     val_ds = FramePEFTDataset(
-        split_file=split_file,
-        rearrange_json=rearrange_json,
-        dataset_name=cfg["dataset_name"],
-        split="val",
+        split_file=val_split_file,
+        rearrange_json=val_rearrange_json,
+        dataset_name=val_dataset_name,
+        split=val_split,
         num_frames=cfg["num_frames"]["val"],
         preprocess=preprocess,
         max_videos=max_videos,
