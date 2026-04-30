@@ -77,11 +77,18 @@ class PEFTTrainer:
             x = x.to(self.device, non_blocking=True)
             y = y.to(self.device, non_blocking=True)
 
-            with self._autocast():
-                logits = self.model(x)
-                loss = F.cross_entropy(logits, y) / self.grad_accum
+            if i == 0 or (i + 1) % 10 == 0:
+                self._log_cuda_memory(f"epoch {epoch} batch {i + 1}/{n_batches} before forward")
 
-            self.scaler.scale(loss).backward()
+            try:
+                with self._autocast():
+                    logits = self.model(x)
+                    loss = F.cross_entropy(logits, y) / self.grad_accum
+
+                self.scaler.scale(loss).backward()
+            except RuntimeError:
+                self._log_cuda_memory(f"epoch {epoch} batch {i + 1}/{n_batches} failed")
+                raise
 
             step_now = ((i + 1) % self.grad_accum == 0) or (i + 1 == n_batches)
             if step_now:
@@ -92,7 +99,7 @@ class PEFTTrainer:
             running += float(loss.item()) * self.grad_accum
             pbar.set_postfix(loss=f"{loss.item() * self.grad_accum:.4f}")
             if i == 0 or (i + 1) % 10 == 0:
-                self._log_cuda_memory(f"epoch {epoch} batch {i + 1}/{n_batches}")
+                self._log_cuda_memory(f"epoch {epoch} batch {i + 1}/{n_batches} after backward")
 
         avg_loss = running / max(n_batches, 1)
         auc, acc, acc_best, best_thresh = self.eval_epoch(val_loader)
