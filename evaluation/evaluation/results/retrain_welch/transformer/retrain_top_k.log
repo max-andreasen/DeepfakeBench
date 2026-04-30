@@ -1,0 +1,10 @@
+2026-04-29 21:14:54,143 - INFO - === retrain_top_k ===
+2026-04-29 21:14:54,143 - INFO -   study_dir      : training/searches/runs/transformer_search3
+2026-04-29 21:14:54,143 - INFO -   catalogue_file : clip/embeddings/benchmarks/cdfv2_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+2026-04-29 21:14:54,143 - INFO -   out_dir        : evaluation/results/retrain_welch/transformer
+2026-04-29 21:14:54,143 - INFO -   top_k=1  n_seeds=43  seeds=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42]
+2026-04-29 21:14:54,143 - INFO -   num_epochs_override=None  batch_size_eval=64  aggregation=mean
+2026-04-29 21:14:54,143 - INFO -   early_stopping_patience=5
+2026-04-29 21:14:54,143 - INFO -   test_split_file=datasets/splits/Celeb-DF-v2-clean.csv  test_split=test
+2026-04-29 21:14:54,143 - INFO -   val_catalogue_file=clip/embeddings/benchmarks/cdfv2_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+2026-04-29 21:14:54,143 - INFO -   val_split_file=datasets/splits/Celeb-DF-v2-clean.csv  val_split=val

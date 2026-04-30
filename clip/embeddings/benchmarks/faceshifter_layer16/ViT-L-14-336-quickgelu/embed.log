@@ -6,3 +6,5 @@
 2026-04-29 14:47:03,090 - INFO - Output dir: /home/max-andreasen/GitHub/DeepfakeBench/clip/embeddings/benchmarks/faceshifter_layer16/ViT-L-14-336-quickgelu
 2026-04-29 14:47:03,196 - INFO - Built DataFrame: 2000 videos
 2026-04-29 14:47:07,719 - INFO - Layers: ['pre_proj', 'block_16']  dims: {'pre_proj': 1024, 'block_16': 1024}
+2026-04-29 17:25:59,358 - INFO - Embedded 2000 videos.
+2026-04-29 17:25:59,370 - INFO - Embedding finished. Failures: 0
