@@ -45,10 +45,10 @@ rearrange:
                 "UADFV",
                 "FaceShifter",
             ]
-        default: "FaceShifter"
+        default: "Celeb-DF-v2"
     dataset_root_path: # the root path to the dataset
         type: str
-        default: "/home/max-andreasen/GitHub/DeepfakeBench/datasets/rgb"
+        default: "/home/jovyan/ThesisPEFT/DeepfakeBench/datasets/rgb"
     output_file_path: # the json path to the dataset
         type: str
         default: "../preprocessing/rearrangements/dataset_json_mtcnn"

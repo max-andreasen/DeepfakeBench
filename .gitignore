@@ -21,3 +21,4 @@ trial_*
 # Keep per-run artifacts (results/config/summary/plots) but not full training logs.
 logs/**/training.log
 logs/**/orchestrator.log
+.ipynb_checkpoints/

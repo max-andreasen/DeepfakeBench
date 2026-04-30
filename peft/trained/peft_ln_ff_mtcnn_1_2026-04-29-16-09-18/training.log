@@ -1,0 +1,10 @@
+2026-04-29 16:09:18,071 - INFO - ============================================================
+2026-04-29 16:09:18,071 - INFO - Config: {'tag': 'peft_ln_ff_mtcnn_1', 'root_dir': '/home/jovyan/ThesisPEFT/DeepfakeBench', 'split_file': 'datasets/splits/FaceForensics++.csv', 'rearrange_json': 'preprocessing/rearrangements/dataset_json_mtcnn/FaceForensics++.json', 'dataset_name': 'FaceForensics++', 'num_frames': {'train': 32, 'val': 32}, 'clip': {'name': 'ViT-L-14-336-quickgelu', 'pretrained': 'openai', 'ln_scope': 'all', 'grad_checkpointing': True, 'amp_dtype': 'fp16'}, 'temporal': {'clip_embed_dim': 1024, 'num_frames': 32, 'num_classes': 2, 'num_layers': 8, 'n_heads': 8, 'dim_feedforward': 3072, 'attn_dropout': 0.1, 'mlp_dropout': 0.4, 'mlp_hidden_dim': 512}, 'optimizer': {'type': 'adamw', 'lr': 2e-05, 'weight_decay': 0.0005, 'beta1': 0.9, 'beta2': 0.999, 'eps': 1e-08}, 'lr_scheduler': 'cosine', 'num_epochs': 30, 'warmup_epochs': 2, 'batchSize': {'train': 16, 'val': 16}, 'grad_accum_steps': 4, 'workers': 4, 'seed': 1024, 'device': 'cuda', 'log_dir': 'peft/trained', 'save_ckpt': True, 'metric_scoring': 'auc', 'max_videos': None}
+2026-04-29 16:09:18,071 - INFO - Log dir: /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_1_2026-04-29-16-09-18
+2026-04-29 16:09:18,071 - INFO - Loading CLIP backbone...
+2026-04-29 16:09:21,552 - INFO - train batches: 225  val batches: 44
+2026-04-29 16:09:24,416 - INFO - trainable=34.53M total=337.9M
+2026-04-29 16:09:33,729 - INFO - saved final ckpt (no best found) to /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_1_2026-04-29-16-09-18/model.pth
+2026-04-29 16:09:33,729 - INFO - wrote run_config to /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_1_2026-04-29-16-09-18/run_config.json
+2026-04-29 16:09:33,729 - INFO - best_val_auc=0.0000
+2026-04-29 16:09:33,729 - INFO - training interrupted before completion.

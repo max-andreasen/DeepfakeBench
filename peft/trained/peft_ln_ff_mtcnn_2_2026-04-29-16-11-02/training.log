@@ -1,0 +1,42 @@
+2026-04-29 16:11:02,516 - INFO - ============================================================
+2026-04-29 16:11:02,516 - INFO - Config: {'tag': 'peft_ln_ff_mtcnn_2', 'root_dir': '/home/jovyan/ThesisPEFT/DeepfakeBench', 'split_file': 'datasets/splits/FaceForensics++.csv', 'rearrange_json': 'preprocessing/rearrangements/dataset_json_mtcnn/FaceForensics++.json', 'dataset_name': 'FaceForensics++', 'num_frames': {'train': 32, 'val': 32}, 'clip': {'name': 'ViT-L-14-336-quickgelu', 'pretrained': 'openai', 'ln_scope': 'all', 'grad_checkpointing': True, 'amp_dtype': 'fp16'}, 'temporal': {'clip_embed_dim': 1024, 'num_frames': 32, 'num_classes': 2, 'num_layers': 8, 'n_heads': 8, 'dim_feedforward': 3072, 'attn_dropout': 0.1, 'mlp_dropout': 0.4, 'mlp_hidden_dim': 512}, 'optimizer': {'type': 'adamw', 'lr': 2e-05, 'weight_decay': 0.0005, 'beta1': 0.9, 'beta2': 0.999, 'eps': 1e-08}, 'lr_scheduler': 'cosine', 'num_epochs': 30, 'warmup_epochs': 2, 'batchSize': {'train': 8, 'val': 8}, 'grad_accum_steps': 8, 'workers': 4, 'seed': 1024, 'device': 'cuda', 'log_dir': 'peft/trained', 'save_ckpt': True, 'metric_scoring': 'auc', 'max_videos': None}
+2026-04-29 16:11:02,516 - INFO - Log dir: /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_2_2026-04-29-16-11-02
+2026-04-29 16:11:02,516 - INFO - Loading CLIP backbone...
+2026-04-29 16:11:06,166 - INFO - train batches: 450  val batches: 88
+2026-04-29 16:11:09,003 - INFO - trainable=34.53M total=337.9M
+2026-04-29 16:54:39,699 - INFO - epoch 0 train_loss=0.4663
+2026-04-29 16:57:07,341 - INFO - epoch 0 val_auc=0.8050 val_acc=0.8043 val_acc@best=0.6629 thr=0.120
+2026-04-29 16:57:07,509 - INFO - saved best ckpt (auc=0.8050) to /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_2_2026-04-29-16-11-02/model.pth
+2026-04-29 16:57:07,984 - INFO - saved resume ckpt (epoch=0) to /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_2_2026-04-29-16-11-02/checkpoint.pth
+2026-04-29 17:40:37,694 - INFO - epoch 1 train_loss=0.3938
+2026-04-29 17:43:05,446 - INFO - epoch 1 val_auc=0.8523 val_acc=0.8229 val_acc@best=0.7343 thr=0.299
+2026-04-29 17:43:05,634 - INFO - saved best ckpt (auc=0.8523) to /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_2_2026-04-29-16-11-02/model.pth
+2026-04-29 17:43:06,175 - INFO - saved resume ckpt (epoch=1) to /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_2_2026-04-29-16-11-02/checkpoint.pth
+2026-04-29 18:26:34,866 - INFO - epoch 2 train_loss=0.3560
+2026-04-29 18:29:02,230 - INFO - epoch 2 val_auc=0.8699 val_acc=0.8443 val_acc@best=0.7757 thr=0.308
+2026-04-29 18:29:02,432 - INFO - saved best ckpt (auc=0.8699) to /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_2_2026-04-29-16-11-02/model.pth
+2026-04-29 18:29:02,983 - INFO - saved resume ckpt (epoch=2) to /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_2_2026-04-29-16-11-02/checkpoint.pth
+2026-04-29 19:12:39,298 - INFO - epoch 3 train_loss=0.3287
+2026-04-29 19:15:07,209 - INFO - epoch 3 val_auc=0.8849 val_acc=0.8357 val_acc@best=0.7986 thr=0.283
+2026-04-29 19:15:07,398 - INFO - saved best ckpt (auc=0.8849) to /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_2_2026-04-29-16-11-02/model.pth
+2026-04-29 19:15:07,965 - INFO - saved resume ckpt (epoch=3) to /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_2_2026-04-29-16-11-02/checkpoint.pth
+2026-04-29 19:58:44,203 - INFO - epoch 4 train_loss=0.3030
+2026-04-29 20:01:12,438 - INFO - epoch 4 val_auc=0.8993 val_acc=0.8543 val_acc@best=0.7614 thr=0.178
+2026-04-29 20:01:12,638 - INFO - saved best ckpt (auc=0.8993) to /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_2_2026-04-29-16-11-02/model.pth
+2026-04-29 20:01:13,213 - INFO - saved resume ckpt (epoch=4) to /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_2_2026-04-29-16-11-02/checkpoint.pth
+2026-04-29 20:44:44,570 - INFO - epoch 5 train_loss=0.2779
+2026-04-29 20:47:12,561 - INFO - epoch 5 val_auc=0.9048 val_acc=0.8571 val_acc@best=0.8371 thr=0.256
+2026-04-29 20:47:12,773 - INFO - saved best ckpt (auc=0.9048) to /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_2_2026-04-29-16-11-02/model.pth
+2026-04-29 20:47:13,354 - INFO - saved resume ckpt (epoch=5) to /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_2_2026-04-29-16-11-02/checkpoint.pth
+2026-04-29 21:30:42,359 - INFO - epoch 6 train_loss=0.2636
+2026-04-29 21:33:09,909 - INFO - epoch 6 val_auc=0.9118 val_acc=0.8114 val_acc@best=0.8486 thr=0.583
+2026-04-29 21:33:10,125 - INFO - saved best ckpt (auc=0.9118) to /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_2_2026-04-29-16-11-02/model.pth
+2026-04-29 21:33:10,771 - INFO - saved resume ckpt (epoch=6) to /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_2_2026-04-29-16-11-02/checkpoint.pth
+2026-04-29 22:16:42,624 - INFO - epoch 7 train_loss=0.2460
+2026-04-29 22:19:11,184 - INFO - epoch 7 val_auc=0.9208 val_acc=0.8700 val_acc@best=0.8243 thr=0.189
+2026-04-29 22:19:11,403 - INFO - saved best ckpt (auc=0.9208) to /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_2_2026-04-29-16-11-02/model.pth
+2026-04-29 22:19:12,027 - INFO - saved resume ckpt (epoch=7) to /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_2_2026-04-29-16-11-02/checkpoint.pth
+2026-04-29 23:02:49,080 - INFO - epoch 8 train_loss=0.2256
+2026-04-29 23:04:48,131 - INFO - wrote run_config to /home/jovyan/ThesisPEFT/DeepfakeBench/peft/trained/peft_ln_ff_mtcnn_2_2026-04-29-16-11-02/run_config.json
+2026-04-29 23:04:48,132 - INFO - best_val_auc=0.9208
+2026-04-29 23:04:48,132 - INFO - training interrupted before completion.

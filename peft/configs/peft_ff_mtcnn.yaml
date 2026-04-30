@@ -1,7 +1,7 @@
-tag: peft_ln_ff_mtcnn
+tag: peft_ln_ff_mtcnn_2
 
 # data
-root_dir: /home/max-andreasen/GitHub/DeepfakeBench
+root_dir: /home/jovyan/ThesisPEFT/DeepfakeBench
 split_file: datasets/splits/FaceForensics++.csv
 rearrange_json: preprocessing/rearrangements/dataset_json_mtcnn/FaceForensics++.json
 dataset_name: FaceForensics++
@@ -40,7 +40,7 @@ num_epochs: 30
 warmup_epochs: 2
 
 # runtime
-batchSize: { train: 4, val: 4 }
+batchSize: { train: 8, val: 8 }
 grad_accum_steps: 8
 workers: 4
 seed: 1024
