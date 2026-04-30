@@ -10,28 +10,38 @@ Put durable repo instructions in `CLAUDE.md`; put time-varying project state her
 
 ## Research Question
 
-Does adding a temporal aggregation head (Transformer or BiGRU) on top of frozen CLIP frame embeddings improve cross-dataset deepfake detection generalisation compared to a simple linear (mean-pool) classifier?
+Does adding a temporal aggregation head (Transformer or BiGRU) on top of frozen CLIP frame embeddings improve cross-dataset deepfake detection generalisation compared to a simple linear (mean-pool) classifier? And does fine-tuning the CLIP backbone (PEFT) yield a further improvement over the fully-frozen variants?
 
-The hypothesis is that modelling temporal dependencies across frames captures manipulation artefacts that are not visible in single frames, yielding better out-of-distribution generalisation.
+The hypothesis is that modelling temporal dependencies across frames captures manipulation artefacts that are not visible in single frames, yielding better out-of-distribution generalisation. A second hypothesis is that PEFT (LN-tuned CLIP + optimised temporal head) closes the gap to ~90% CDFv2 AUC reported by Yermakov et al., far above the frozen-backbone ceiling (~72%).
 
 ---
 
 ## Architecture
 
+### Frozen backbone (models 1–3)
 ```
 FF++ videos
   → MTCNN face detection → frames (T=96 per video, fixed)
   → Frozen CLIP ViT-L/14-336 (block 16 intermediate features, dim=1024)
   → Temporal head (one of three):
-       - LinearClassifier   — mean-pool frames → linear layer
-       - TransformerClassifier — positional encoding + transformer encoder → CLS token → linear
-       - BiGRUClassifier    — bidirectional GRU → mean-pool hidden states → linear
+       - LinearClassifier        — mean-pool frames → linear layer
+       - TransformerClassifier   — positional encoding + transformer encoder → CLS token → linear
+       - BiGRUClassifier         — bidirectional GRU → mean-pool hidden states → linear
+  → Binary sigmoid output (real / fake)
+```
+
+### PEFT (model 4)
+```
+FF++ videos
+  → MTCNN face detection → frames (T=32 per video, fixed)
+  → LN-tuned CLIP ViT-L/14-336 (LayerNorm weights unfrozen; rest frozen)
+  → TransformerClassifier temporal head (optimised via Optuna)
   → Binary sigmoid output (real / fake)
 ```
 
 **Training dataset:** FaceForensics++ (FF++), all four manipulation methods, c23 compression.
 **Evaluation dataset:** Celeb-DF-v2 (CDFv2) — zero-shot cross-dataset generalisation.
-**Embedding catalogue:** `clip/embeddings/benchmarks/cdfv2_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv`
+**Embedding catalogue (frozen models):** `clip/embeddings/benchmarks/cdfv2_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv`
 
 ---
 
@@ -80,42 +90,73 @@ Configs: `evaluation/configs/retrain_top_k_{transformer,bigru,linear}_search*.ya
 
 ---
 
-## Current Status (2026-04-28)
+## Current Status (2026-04-29)
+
+### Frozen backbone pilot (N = 5)
 
 | Model | Retrain run | Seeds done | Mean test AUC | Notes |
 |---|---|---|---|---|
 | Transformer | `transformer_search3_10` | 5/5 | **71.95%** | seed AUCs: 71.10, 72.56, 73.78, 70.74, 71.59 |
 | BiGRU | `bigru_search2` | 5/5 | **71.28%** | seed AUCs: 68.44, 70.09, 72.72, 72.55, 72.60 |
 | Linear | `linear_search3_1` | 5/5 | **68.06%** | seed AUCs: 67.94, 67.95, 68.60, 67.37, 68.46 |
+| PEFT | — | 0 | — | Optuna search not yet run |
 
-### Pilot Study Outcome (N = 5)
-
-- The pilot retrain phase is complete for all three rank-1 models.
 - Observed ranking on CDFv2-clean test: Transformer (71.95%) > BiGRU (71.28%) > Linear (68.06%).
-- Transformer vs BiGRU is a small effect in the pilot; BiGRU vs Linear and Transformer vs Linear appear larger.
-- The pilot sample is not intended as the final inferential result. Its role is to estimate variance and effect sizes well enough to derive a larger, defensible N for the final repeated-seed study.
+- Transformer vs BiGRU is a small effect; BiGRU vs Linear and Transformer vs Linear are larger.
+- The pilot is a **planning stage only** — not the final inferential result.
+
+### Power analysis (MESI = 1 pp, target power = 0.80, Colas et al. 2018)
+
+MESI is defined on the AUC scale as `epsilon = 0.01`, i.e. 1 percentage point
+of AUC. The power calculation follows the Colas et al. framing directly:
+choose a raw detectable difference `epsilon`, estimate per-model seed variance
+from the N=5 pilot, and solve for the N needed by a two-sided Welch test. Do
+not base the methodology on Cohen's d; standardized effect sizes may be
+reported descriptively if useful, but they are not the planning primitive.
+
+| Pair | Required N |
+|---|---|
+| Transformer vs BiGRU | **43** |
+| BiGRU vs Linear | 33 |
+| Transformer vs Linear | 15 |
+
+Hardest comparison drives N = **43 seeds per frozen model**. At ~40 min/seed on H100, 43 × 3 models ≈ 86 GPU-hours — feasible.
+
+### Planned statistical questions
+
+Treat the final statistical analysis as two distinct planned hypothesis
+families:
+
+1. **Frozen-backbone architecture comparison** — compare Transformer, BiGRU,
+   and Linear using the final N=43 repeated-seed samples. Run all three
+   pairwise Welch tests and apply Bonferroni correction across this frozen
+   family only (`alpha = 0.05 / 3 = 0.0167`, or equivalently report
+   `p_adj = min(3 * p_raw, 1)`).
+2. **PEFT vs best frozen baseline** — compare PEFT against the strongest
+   frozen-backbone model using a separate planned Welch test. This is a
+   separate research question, so it is not included in the frozen-family
+   Bonferroni denominator. Welch's test can compare unequal sample sizes, so
+   the PEFT side may use N=5 if that is the feasible compute budget while the
+   frozen baseline reuses its existing N=43 final samples.
+
+### PEFT comparison
+PEFT is expected to land near ~90% CDFv2 AUC (Yermakov et al. baseline). If confirmed, the difference vs the strongest frozen model (~72%) will be very large, so N=5 PEFT retrains may be sufficient for the planned PEFT-vs-best-frozen comparison. Report the smaller PEFT N transparently, include PEFT per-seed AUCs and a confidence interval, and reuse the selected frozen baseline's existing N=43 samples rather than retraining it.
 
 ---
 
 ## Immediate Next Steps
 
-1. **Derive a new repeated-seed N from the pilot results** — use the N=5 pilot AUC samples from the three `results.csv` files to estimate effect sizes and run a power analysis for the pairwise comparisons.
-   - Tool: `pingouin` (`pip install pingouin`)
-   - `pg.ttest(a, b, correction=True)` returns T, dof, p-val, and power in one call.
-   - Power uses the exact non-central t-distribution (more rigorous than the Colas et al. central-t approximation, but equivalent for reporting).
-   - Paper followed for power methodology: *"How Many Random Seeds? Statistical Power Analysis in Deep Reinforcement Learning Experiments"* (Colas et al., 2018).
-   - Comparisons: Transformer vs BiGRU, Transformer vs Linear, BiGRU vs Linear.
-   - The new N should be chosen conservatively enough to support the hardest comparison, likely Transformer vs BiGRU.
+1. **Run the frozen-backbone final retrains (N=43)** — rerun Transformer, BiGRU, and Linear with 43 seeds each using CDFv2-clean val (early stopping) and CDFv2-clean test (evaluation). This is the final inferential dataset for the frozen comparison.
 
-2. **Retrain the rank-1 models again with the new N** — rerun the final repeated-seed retrain for Transformer, BiGRU, and Linear using the N derived from the power analysis.
-   - Keep the same rank-1 configs and the same CDFv2-clean val/test protocol.
-   - This second repeated-seed run is the final inferential dataset, not just a pilot.
+2. **Run PEFT Optuna search** — search over `ln_scope`, `lr`, `weight_decay`, `warmup_epochs`; ~30 trials × 10 epochs on H100. Temporal head architecture is fixed. Val metric: CDFv2-clean val AUC.
 
-3. **Run Welch t-tests on the final repeated-seed samples** — use the expanded seed samples to derive the final statistical comparisons between the three models.
-   - Report effect size, p-value, confidence interval, and statistical power for each pair.
-   - Preserve the pilot results as a planning artifact; do not present them as the final confirmatory test.
+3. **Run PEFT pilot retrains (N=5)** — retrain rank-1 PEFT config with 5 seeds to estimate variance and determine final N for the PEFT vs frozen comparison. Expected AUC ~90% (Yermakov); if confirmed, N will be much smaller than 43.
 
-4. **Update / finish `statistical_analysis.py`** — it should read the repeated-seed `results.csv` files, compute power-analysis-derived planning outputs, and then run the final pairwise comparisons plus summary plots/tables.
+4. **Run Welch t-tests on final samples** — pairwise per-dataset tests using `pingouin.ttest(a, b, correction=True)`. MESI = 0.01 (1 pp). Report raw p-value, adjusted p-value where applicable, CI, and power. No Cohen's d for planning — follow Colas et al. 2018 methodology.
+   - Frozen family: Transformer vs BiGRU, Transformer vs Linear, BiGRU vs Linear; Bonferroni-correct across these 3 planned comparisons.
+   - PEFT family: PEFT vs the strongest frozen-backbone baseline only; separate planned comparison, no Bonferroni correction with the frozen family.
+
+5. **Finalise `statistical_analysis.py`** — reads `results.csv` files, runs power-analysis planning output, then final pairwise Welch t-tests with summary table/plots.
 
 ---
 
@@ -126,6 +167,8 @@ Configs: `evaluation/configs/retrain_top_k_{transformer,bigru,linear}_search*.ya
 - **Early stopping added to retrain** (not to param search). The param search methodology is locked to match the original FF++ val approach. Early stopping on CDFv2-val is applied only during the final retrain to prevent epoch-count overfitting.
 
 - **Pilot study is now explicitly a planning stage** — the initial N=5 repeated-seed retrains are used to estimate variance/effect sizes and set the final sample size. Final statistical claims will be based on a larger repeated-seed rerun, not the pilot alone.
+
+- **Statistical analysis has two planned families** — frozen-backbone architecture comparison is one family of three pairwise Welch tests with Bonferroni correction. PEFT vs the strongest frozen baseline is a separate planned comparison and can use unequal N (e.g. PEFT N=5 vs frozen N=43) under Welch's test.
 
 - **T=96 frames is a fixed design choice** — do not propose reducing this.
 

@@ -1,7 +1,7 @@
 {
-  "created_utc": "2026-04-29T12:47:07.719378+00:00",
-  "completed": false,
-  "completed_utc": null,
+  "created_utc": "2026-04-29T15:25:59.367753+00:00",
+  "completed": true,
+  "completed_utc": "2026-04-29T15:25:59.367763+00:00",
   "layer_dims": {
     "pre_proj": 1024,
     "block_16": 1024

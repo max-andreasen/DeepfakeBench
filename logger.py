@@ -26,4 +26,5 @@ def create_logger(log_file):
 
     logger.addHandler(fh)
     logger.addHandler(ch)
+    logger.propagate = False
     return logger

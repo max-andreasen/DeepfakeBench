@@ -952,4 +952,241 @@ number (50–150 lines).
 
 ---
 
+## 9 · Extension: BiGRU temporal head
+
+> **Goal.** Swap the temporal Transformer for a BiGRU under the *same*
+> LN-tuned CLIP backbone, training pipeline, and evaluation protocol. This
+> mirrors the frozen-backbone Transformer-vs-BiGRU comparison at the PEFT
+> level, so the four-model story (Linear / BiGRU / Transformer frozen + PEFT
+> variants) stays consistent.
+
+### 9.1 · Locked decisions
+
+| # | Decision | Why / source |
+|---|----------|--------------|
+| B1 | Temporal head class = `models.bigru.BiGRU` (existing, untouched). | Re-use the same head used in the frozen pipeline so PEFT-Transformer vs PEFT-BiGRU is a clean head-only contrast. |
+| B2 | Backbone, LN scope, T=32 sampling window, AMP, grad checkpointing — all identical to the Transformer PEFT path. | Isolates the head as the only varying factor. |
+| B3 | New config field `temporal_type: "transformer" | "bigru"` (default `"transformer"` to keep existing configs working). | Backwards-compatible; existing `peft_ff_mtcnn.yaml` etc. unchanged. |
+| B4 | BiGRU hyperparameters seeded from the rank-1 frozen-pipeline BiGRU search (`bigru_search2`); re-tune later if needed. | Reasonable starting point; comparable to the frozen baseline. |
+| B5 | Zero edits to `models/bigru.py`, the trainer, the data loader, or the entry script's training loop. Only `clip_peft.py` and configs change. | Smallest surface area; same do-not-touch policy as §4. |
+
+### 9.2 · Files touched
+
+```
+peft/
+├── models/clip_peft.py             # +temporal_type dispatch
+├── train.py                        # pass temporal_type through to CompositePEFT
+└── configs/
+    ├── peft_bigru_ff_mtcnn.yaml    # NEW — BiGRU + FF++ val
+    ├── peft_bigru_ff_cdfv2val.yaml # NEW — BiGRU + CDFv2 val (overfit-onset run)
+    └── peft_bigru_smoke.yaml       # NEW — 1-epoch / 10-video smoke
+```
+
+No new module file; `BiGRU` is imported directly from `models.bigru`.
+
+### 9.3 · Implementation steps
+
+#### Step B1 — Dispatch in `CompositePEFT`
+
+In `peft/models/clip_peft.py`:
+
+- Add `from models.bigru import BiGRU` next to the existing
+  `from models.transformer import Transformer` import.
+- Add a `temporal_type: str = "transformer"` argument to
+  `CompositePEFT.__init__`.
+- Replace the unconditional `self.temporal = Transformer(**defaults)` block
+  with a dispatch that picks defaults by type and instantiates the right
+  class:
+  - `"transformer"` → existing defaults + `Transformer`.
+  - `"bigru"` → `dict(clip_embed_dim=1024, num_classes=2, hidden_dim=512,
+    num_layers=2, gru_dropout=0.1, mlp_dropout=0.4, mlp_hidden_dim=512)` +
+    `BiGRU`.
+  - Any other value → `ValueError`.
+- `temporal_kwargs.update(...)` still merges user overrides on top, same as
+  for the Transformer path.
+
+**Acceptance test (offline):**
+```python
+m1 = CompositePEFT(temporal_type="transformer")
+m2 = CompositePEFT(temporal_type="bigru")
+x  = torch.randn(2, 32, 3, 336, 336)
+assert m1(x).shape == (2, 2)
+assert m2(x).shape == (2, 2)
+assert isinstance(m2.temporal, BiGRU)
+```
+
+#### Step B2 — Wire `temporal_type` through `train.py`
+
+In `peft/train.py`:
+
+- Read `cfg["temporal_type"]` (default `"transformer"`) and pass it as the
+  `temporal_type=` kwarg to `CompositePEFT(...)`. Single line.
+- No other changes — the trainer doesn't care which head it's training.
+
+#### Step B3 — Smoke config + run
+
+Create `peft/configs/peft_bigru_smoke.yaml`. Identical to `peft_smoke.yaml`
+except:
+- `tag: peft_bigru_smoke`
+- `temporal_type: bigru`
+- `temporal:` block uses BiGRU keys (`hidden_dim`, `num_layers`,
+  `gru_dropout`, `mlp_dropout`, `mlp_hidden_dim`) — drop the
+  Transformer-only keys.
+
+**Acceptance test:**
+```bash
+python peft/train.py --config peft/configs/peft_bigru_smoke.yaml
+```
+Expected: one epoch completes, `model.pth` written, `trainable=` line in the
+log shows roughly the same LN parameter count as the Transformer path plus
+the BiGRU's own trainable params (lower than Transformer's ~30 M head, since
+a 2-layer BiGRU at hidden=512 is ~6 M params).
+
+#### Step B4 — Full configs
+
+Create `peft/configs/peft_bigru_ff_mtcnn.yaml` and
+`peft/configs/peft_bigru_ff_cdfv2val.yaml`. Both are direct copies of their
+Transformer counterparts with:
+- `tag` updated.
+- `temporal_type: bigru` added.
+- `temporal:` block replaced with BiGRU defaults (B4 above), seeded from
+  the rank-1 frozen `bigru_search2` config.
+
+Same `optimizer`, `lr_scheduler`, `num_epochs`, `batchSize`,
+`grad_accum_steps`, `seed`, etc. — keep the optimisation regime identical to
+the Transformer PEFT runs so the head is the *only* varying factor.
+
+**Acceptance test:** training launches without config errors and reaches
+epoch 1 val AUC > 0.5.
+
+### 9.4 · Out of scope for this extension
+
+- Optuna search over BiGRU PEFT hyperparameters. (Run only if the seeded
+  config is clearly worse than the Transformer PEFT baseline; otherwise the
+  shared optimisation regime is sufficient for the comparison.)
+- Any change to `peft/evaluation/`. The evaluator already calls
+  `model(x)` and reads `pred_dict`-style outputs; head class is irrelevant.
+- Any change to `peft/data_loader.py`. The loader returns `[B, T, 3, H, W]`
+  regardless of head.
+
+### 9.5 · Acceptance summary
+
+The BiGRU PEFT extension is "done" when:
+
+1. `CompositePEFT(temporal_type="bigru")` round-trips a forward pass.
+2. `peft_bigru_smoke.yaml` completes one epoch end-to-end.
+3. `peft_bigru_ff_mtcnn.yaml` (or the CDFv2-val variant) trains to
+   completion and produces a `model.pth` + `run_config.json`.
+4. The Transformer PEFT path still works unchanged — `peft_ff_mtcnn.yaml`
+   continues to train without any config edits.
+
+---
+
+## 10 · Extension: Linear temporal head
+
+> **Goal.** Same as §9, but with the LinearClassifier (mean-pool + MLP) as
+> the temporal head. Completes the four-model story at the PEFT level
+> (Linear / BiGRU / Transformer + a frozen baseline). The Linear PEFT run
+> is also the cheapest to train, which makes it a useful sanity check
+> against the more elaborate heads.
+
+### 10.1 · Locked decisions
+
+| # | Decision | Why / source |
+|---|----------|--------------|
+| L1 | Temporal head class = `models.linear_cls.LinearClassifier` (existing, untouched). | Same head as the frozen-pipeline Linear baseline — clean head-only contrast. |
+| L2 | Backbone, LN scope, T=32 sampling window, AMP, grad checkpointing — identical to the Transformer/BiGRU PEFT paths. | Isolates the head as the only varying factor. |
+| L3 | `temporal_type` gains a third value: `"linear"`. Default still `"transformer"` for backwards compatibility. | Same dispatch pattern as §9. |
+| L4 | Linear hyperparameters seeded from the rank-1 frozen `linear_search3_1` config. | Reasonable starting point; comparable to the frozen baseline. |
+| L5 | **Pooling stays inside `LinearClassifier`** (`x.abs().mean(dim=1)`). Do not pre-pool in `CompositePEFT.forward` — the head expects `[B, T, D]`. | Matches the frozen-pipeline Linear path; see `feedback_linear_pool_change.md`. |
+| L6 | Zero edits to `models/linear_cls.py`, the trainer, the data loader, or the entry script's training loop. Only `clip_peft.py` and configs change. | Smallest surface area. |
+
+### 10.2 · Files touched
+
+```
+peft/
+├── models/clip_peft.py              # +"linear" branch in dispatch
+├── train.py                         # already wired in §9 — no further change
+└── configs/
+    ├── peft_linear_ff_mtcnn.yaml    # NEW — Linear + FF++ val
+    ├── peft_linear_ff_cdfv2val.yaml # NEW — Linear + CDFv2 val (overfit-onset run)
+    └── peft_linear_smoke.yaml       # NEW — 1-epoch / 10-video smoke
+```
+
+### 10.3 · Implementation steps
+
+#### Step L1 — Extend dispatch in `CompositePEFT`
+
+In `peft/models/clip_peft.py`:
+
+- Add `from models.linear_cls import LinearClassifier`.
+- Add a third branch to the `temporal_type` dispatch:
+  - `"linear"` → defaults `dict(clip_embed_dim=1024, num_classes=2,
+    mlp_dropout=0.2, mlp_hidden_dim=512)` + `LinearClassifier`.
+- `temporal_kwargs.update(...)` merges user overrides as for the other
+  heads.
+
+**Acceptance test (offline):**
+```python
+m = CompositePEFT(temporal_type="linear")
+x = torch.randn(2, 32, 3, 336, 336)
+assert m(x).shape == (2, 2)
+assert isinstance(m.temporal, LinearClassifier)
+```
+
+#### Step L2 — Smoke config + run
+
+Create `peft/configs/peft_linear_smoke.yaml`. Identical to `peft_smoke.yaml`
+except:
+- `tag: peft_linear_smoke`
+- `temporal_type: linear`
+- `temporal:` block uses Linear keys only (`clip_embed_dim`, `num_classes`,
+  `mlp_dropout`, `mlp_hidden_dim`). Drop the Transformer-only keys.
+
+**Acceptance test:**
+```bash
+python peft/train.py --config peft/configs/peft_linear_smoke.yaml
+```
+Expected: one epoch completes, `model.pth` written. The `trainable=` line
+should be roughly *LN params + ~0.6 M head params* — i.e. clearly smaller
+than the Transformer PEFT run, since the LinearClassifier is just two
+`nn.Linear` layers around a GELU.
+
+#### Step L3 — Full configs
+
+Create `peft/configs/peft_linear_ff_mtcnn.yaml` and
+`peft/configs/peft_linear_ff_cdfv2val.yaml`. Direct copies of the
+Transformer counterparts with:
+- `tag` updated.
+- `temporal_type: linear` added.
+- `temporal:` block replaced with the Linear defaults (L4 above), seeded
+  from the rank-1 frozen `linear_search3_1` config.
+
+Same `optimizer`, `lr_scheduler`, `num_epochs`, `batchSize`,
+`grad_accum_steps`, `seed`, etc. as the other PEFT configs — keep the
+optimisation regime identical so the head is the only varying factor.
+
+**Acceptance test:** training launches without config errors and reaches
+epoch 1 val AUC > 0.5.
+
+### 10.4 · Out of scope for this extension
+
+- Optuna search over Linear PEFT hyperparameters.
+- Any change to `peft/evaluation/`, `peft/data_loader.py`, `peft/trainer.py`,
+  or `peft/train.py` beyond what §9 already added.
+- Any change to the pooling rule (`abs().mean()` stays in `LinearClassifier`).
+
+### 10.5 · Acceptance summary
+
+The Linear PEFT extension is "done" when:
+
+1. `CompositePEFT(temporal_type="linear")` round-trips a forward pass.
+2. `peft_linear_smoke.yaml` completes one epoch end-to-end.
+3. `peft_linear_ff_mtcnn.yaml` (or the CDFv2-val variant) trains to
+   completion and produces a `model.pth` + `run_config.json`.
+4. The Transformer and BiGRU PEFT paths still work unchanged — their
+   configs continue to train without any edits.
+
+---
+
 *End of plan.*

@@ -57,6 +57,7 @@ class PEFTTrainer:
         self.optimizer.zero_grad(set_to_none=True)
         running = 0.0
         n_batches = len(train_loader)
+        n_epochs = int(self.config.get("num_epochs", "?"))
         pbar = tqdm(train_loader, desc=f"ep{epoch}", unit="batch", leave=False)
 
         for i, (x, y) in enumerate(pbar):
@@ -78,12 +79,23 @@ class PEFTTrainer:
             running += float(loss.item()) * self.grad_accum
             pbar.set_postfix(loss=f"{loss.item() * self.grad_accum:.4f}")
 
-        avg = running / max(n_batches, 1)
-        self.logger.info(f"epoch {epoch} train_loss={avg:.4f}")
-        return self.eval_epoch(epoch, val_loader)
+        avg_loss = running / max(n_batches, 1)
+        auc, acc, acc_best, best_thresh = self.eval_epoch(val_loader)
+
+        lr = self.optimizer.param_groups[0]["lr"]
+        is_best = auc > self.best_auc
+        flag = "  ★ new best" if is_best else ""
+        self.logger.info(
+            f"epoch {epoch}/{n_epochs}  "
+            f"loss={avg_loss:.4f}  "
+            f"val_auc={auc:.4f}  val_acc={acc:.4f}  val_acc@best={acc_best:.4f}  "
+            f"thr={best_thresh:.3f}  lr={lr:.2e}"
+            f"{flag}"
+        )
+        return auc
 
     @torch.no_grad()
-    def eval_epoch(self, epoch: int, val_loader) -> float:
+    def eval_epoch(self, val_loader) -> tuple[float, float, float, float]:
         self.model.eval()
         all_probs, all_labels = [], []
 
@@ -112,17 +124,12 @@ class PEFTTrainer:
             best_thresh = float("nan")
             acc_best = float("nan")
 
-        self.logger.info(
-            f"epoch {epoch} val_auc={auc:.4f} val_acc={acc:.4f} "
-            f"val_acc@best={acc_best:.4f} thr={best_thresh:.3f}"
-        )
-        return auc
+        return auc, acc, acc_best, best_thresh
 
     def save_best(self, auc: float, out_path: str) -> bool:
         if auc > self.best_auc:
             self.best_auc = auc
             torch.save(self.model.trainable_state_dict(), out_path)
-            self.logger.info(f"saved best ckpt (auc={auc:.4f}) to {out_path}")
             return True
         return False
 
@@ -140,7 +147,6 @@ class PEFTTrainer:
             "per_epoch_val_auc":   per_epoch_val_auc,
         }
         torch.save(payload, out_path)
-        self.logger.info(f"saved resume ckpt (epoch={epoch}) to {out_path}")
 
     def load_checkpoint(self, path: str) -> tuple[int, list]:
         """Load resume checkpoint. Returns (start_epoch, per_epoch_val_auc)."""
