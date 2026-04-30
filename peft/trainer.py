@@ -52,8 +52,21 @@ class PEFTTrainer:
                         dtype=self.amp_dtype,
                         enabled=self.amp_enabled)
 
+    def _log_cuda_memory(self, prefix: str):
+        if self.device.type != "cuda":
+            return
+        allocated = torch.cuda.memory_allocated() / 1024**3
+        reserved = torch.cuda.memory_reserved() / 1024**3
+        peak = torch.cuda.max_memory_allocated() / 1024**3
+        self.logger.info(
+            f"{prefix} cuda_mem allocated={allocated:.2f}GB "
+            f"reserved={reserved:.2f}GB peak={peak:.2f}GB"
+        )
+
     def train_epoch(self, epoch: int, train_loader, val_loader) -> float:
         self.model.train()
+        if self.device.type == "cuda":
+            torch.cuda.reset_peak_memory_stats()
         self.optimizer.zero_grad(set_to_none=True)
         running = 0.0
         n_batches = len(train_loader)
@@ -78,9 +91,12 @@ class PEFTTrainer:
 
             running += float(loss.item()) * self.grad_accum
             pbar.set_postfix(loss=f"{loss.item() * self.grad_accum:.4f}")
+            if i == 0 or (i + 1) % 10 == 0:
+                self._log_cuda_memory(f"epoch {epoch} batch {i + 1}/{n_batches}")
 
         avg_loss = running / max(n_batches, 1)
         auc, acc, acc_best, best_thresh = self.eval_epoch(val_loader)
+        self._log_cuda_memory(f"epoch {epoch} after val")
 
         lr = self.optimizer.param_groups[0]["lr"]
         is_best = auc > self.best_auc
