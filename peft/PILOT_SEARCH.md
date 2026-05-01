@@ -11,11 +11,11 @@ python peft/optuna_search.py \
   --search-config peft/search_configs/peft_gend_pilot12.yaml
 ```
 
-The search config defines the base training config, study name, trial count,
-epoch count, sampler, pruner, storage, output directory, and anchor behavior.
+The search config is self-contained. It defines the PEFT training config, search
+space, study name, trial count, epoch count, sampler, pruner, storage, output
+directory, and anchor behavior.
 For this pilot those values are:
 
-- `base_config: peft/configs/peft_ff_cdfv2val.yaml`
 - `study_name: peft_gend_pilot12`
 - `n_trials: 12`
 - `epochs: 5`
@@ -26,6 +26,7 @@ For this pilot those values are:
 - `pruner.type: median`
 - `pruner.warmup_epochs: 2`
 - `anchors.enabled: true`
+- `training.root_dir: null`, so paths resolve relative to the current repo root
 
 Trial outputs are written under `peft/searches/runs/peft_gend_pilot12/`.
 
@@ -49,9 +50,9 @@ All four anchors use a small temporal head:
 - `optimizer.lr: 2.0e-5`
 - `optimizer.weight_decay: 1.0e-4`
 
-The remaining trials are TPE-sampled from the `search_space` block in
-`peft/configs/peft_ff_cdfv2val.yaml`. The median pruner starts after the anchor
-trials and waits two epochs before pruning.
+The remaining trials are TPE-sampled from the `training.search_space` block in
+`peft/search_configs/peft_gend_pilot12.yaml`. The median pruner starts after the
+anchor trials and waits two epochs before pruning.
 
 ## Outputs
 
