@@ -1,0 +1,25 @@
+# Optuna orchestration config for the first PEFT/GenD-inspired pilot search.
+# Run with:
+#   python peft/optuna_search.py --search-config peft/search_configs/peft_gend_pilot12.yaml
+
+base_config: peft/configs/peft_ff_cdfv2val.yaml
+study_name: peft_gend_pilot12
+
+# This is intentionally a pilot, not final model selection.
+n_trials: 12
+epochs: 5
+
+storage: peft/searches/peft_optuna.db
+output_dir: peft/searches/runs
+
+sampler:
+  type: tpe          # choices: tpe | random
+  seed: 1024
+  startup_trials: 4 # keeps the four L2 x UA anchors before TPE adapts
+
+pruner:
+  type: median      # choices: median | none
+  warmup_epochs: 2
+
+anchors:
+  enabled: true     # enqueue fixed L2 x UA anchors when the study is new

@@ -18,6 +18,8 @@ clip:
   name: ViT-L-14-336-quickgelu
   pretrained: openai
   ln_scope: all
+  feature_layer: pre_proj        # search choices below: pre_proj | block_16
+  l2_normalize_features: true    # search choices below: true | false
   grad_checkpointing: true
   amp_dtype: fp16
 
@@ -25,28 +27,33 @@ temporal:
   clip_embed_dim: 1024
   num_frames: 32
   num_classes: 2
-  num_layers: 8
+  num_layers: 1
   n_heads: 8
-  dim_feedforward: 3072
-  attn_dropout: 0.1
-  mlp_dropout: 0.4
-  mlp_hidden_dim: 512
+  dim_feedforward: 1024
+  attn_dropout: 0.0
+  mlp_dropout: 0.25
+  mlp_hidden_dim: 256
 
 optimizer:
   type: adamw
   lr: 2.0e-5
-  weight_decay: 5.0e-4
+  weight_decay: 1.0e-4
   beta1: 0.9
   beta2: 0.999
   eps: 1.0e-8
 
-lr_scheduler: cosine_warmup
-num_epochs: 20
-warmup_epochs: 2
+loss:
+  ua_enabled: true
+  alignment_weight: 0.1
+  uniformity_weight: 0.5
 
-batchSize: { train: 4, val: 4 }
-grad_accum_steps: 8
-workers: 4
+lr_scheduler: cosine_warmup
+num_epochs: 5
+warmup_epochs: 1
+
+batchSize: { train: 8, val: 8 }
+grad_accum_steps: 2
+workers: 16
 seed: 1024
 device: cuda
 
@@ -55,3 +62,43 @@ save_ckpt: true
 metric_scoring: auc
 
 max_videos: null
+
+# Optuna search-space snapshot for the first PEFT search.
+# Narrowed after reviewing Yermakov et al. / GenD (WACV 2026): their best
+# detector is frame-level LN tuning + L2-normalized CLS + linear frame head,
+# and their temporal attention ablation did not noticeably improve over
+# probability averaging. Keep this search focused on small temporal heads.
+# The training entry point ignores this block; the PEFT Optuna launcher should
+# sample from it and write sampled values into clip/temporal/optimizer above.
+search_space:
+  clip.feature_layer:
+    type: categorical
+    choices: [pre_proj, block_16]
+  clip.l2_normalize_features:
+    type: categorical
+    choices: [true, false]
+  loss.ua_enabled:
+    type: categorical
+    choices: [true, false]
+  optimizer.lr:
+    type: float
+    range: [1.0e-5, 4.0e-5]
+    log: true
+  optimizer.weight_decay:
+    type: categorical
+    choices: [0.0, 1.0e-5, 1.0e-4, 5.0e-4]
+  temporal.num_layers:
+    type: categorical
+    choices: [1, 2, 4]
+  temporal.dim_feedforward:
+    type: categorical
+    choices: [1024, 2048]
+  temporal.attn_dropout:
+    type: categorical
+    choices: [0.0, 0.1]
+  temporal.mlp_dropout:
+    type: float
+    range: [0.1, 0.4]
+  temporal.mlp_hidden_dim:
+    type: categorical
+    choices: [256, 512]

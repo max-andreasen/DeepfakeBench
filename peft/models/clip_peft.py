@@ -10,6 +10,7 @@ from typing import Iterable, List, Optional
 import open_clip
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 # Repo root must be on sys.path; train.py / test.py both insert it.
 from models.transformer import Transformer
@@ -21,10 +22,15 @@ class CompositePEFT(nn.Module):
         clip_name: str = "ViT-L-14-336-quickgelu",
         clip_pretrained: str = "openai",
         ln_scope: str = "all",                  # "all" | "ln_post" | "last_n:<int>"
+        feature_layer: str = "pre_proj",        # "pre_proj" | "block_<int>"
+        l2_normalize_features: bool = False,
         grad_checkpointing: bool = True,
         temporal_kwargs: Optional[dict] = None,
     ):
         super().__init__()
+        self.feature_layer = feature_layer
+        self.l2_normalize_features = l2_normalize_features
+        self._captured = {}
 
         model, _, _ = open_clip.create_model_and_transforms(
             clip_name, pretrained=clip_pretrained
@@ -33,6 +39,7 @@ class CompositePEFT(nn.Module):
         # returns the pre_proj CLS (ln_post output) directly.
         self.visual = model.visual
         self.visual.proj = None
+        self._register_feature_hook(feature_layer)
 
         self._freeze_and_unfreeze_lns(ln_scope)
 
@@ -54,6 +61,31 @@ class CompositePEFT(nn.Module):
         if temporal_kwargs:
             defaults.update(temporal_kwargs)
         self.temporal = Transformer(**defaults)
+
+    def _register_feature_hook(self, feature_layer: str) -> None:
+        if feature_layer == "pre_proj":
+            return
+        if not feature_layer.startswith("block_"):
+            raise ValueError(f"Unknown feature_layer: {feature_layer!r}")
+
+        block_idx = int(feature_layer.split("_", 1)[1])
+        blocks = self.visual.transformer.resblocks
+        if not (0 <= block_idx < len(blocks)):
+            raise ValueError(f"block index {block_idx} out of range [0, {len(blocks)})")
+
+        def hook(_m, _i, out: torch.Tensor):
+            if out.ndim != 3:
+                raise RuntimeError(f"Unexpected resblock output shape {tuple(out.shape)}")
+            token_len = int(self.visual.positional_embedding.shape[0])
+            if out.shape[0] == token_len:
+                cls = out[0]
+            elif out.shape[1] == token_len:
+                cls = out[:, 0]
+            else:
+                raise RuntimeError(f"Could not locate token axis in shape {tuple(out.shape)}")
+            self._captured[feature_layer] = cls
+
+        blocks[block_idx].register_forward_hook(hook)
 
     def _freeze_and_unfreeze_lns(self, scope: str) -> None:
         for p in self.visual.parameters():
@@ -101,10 +133,19 @@ class CompositePEFT(nn.Module):
         # are not required in the checkpoint.
         self.load_state_dict(sd, strict=False)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, return_features: bool = False):
         # x: [B, T, 3, H, W]
         B, T, C, H, W = x.shape
         x = x.reshape(B * T, C, H, W)
-        feats = self.visual(x)                  # [B*T, 1024] pre_proj CLS, no L2-norm
-        feats = feats.reshape(B, T, -1).float() # cast back to fp32 for the head
-        return self.temporal(feats)             # [B, num_classes]
+        self._captured.clear()
+        pre_proj = self.visual(x)               # [B*T, 1024] pre_proj CLS
+        feats = pre_proj if self.feature_layer == "pre_proj" else self._captured[self.feature_layer]
+        feats = feats.float()                   # cast back to fp32 for the head
+        metric_feats = F.normalize(feats, p=2, dim=-1)
+        if self.l2_normalize_features:
+            feats = metric_feats
+        feats = feats.reshape(B, T, -1)
+        logits = self.temporal(feats)           # [B, num_classes]
+        if return_features:
+            return logits, metric_feats.reshape(B, T, -1)
+        return logits

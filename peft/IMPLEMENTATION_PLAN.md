@@ -29,7 +29,7 @@ cannot reuse existing `.npz` caches.
 | 2 | "CLIP pre-projection layer" = the existing `input_proj` inside `models/transformer.py` (Linear 1024→512 + LN). Already trainable. | User-confirmed. No new module needed. |
 | 3 | Feature = **1024-d `pre_proj` CLS** (output of `visual.ln_post`). Bypass `visual.proj` by setting `model.visual.proj = None`. | Paper uses pre-projection. |
 | 4 | Temporal head trained **from scratch** with the same hyperparams as the MTCNN pilot. | Isolates the LN-tuning delta. |
-| 5 | **No L2-norm** on the CLS feature inside the training graph. | L2-norm cancels LN's learned γ — defeats LN-tuning. |
+| 5 | Optional model-side L2-normalization is controlled by `clip.l2_normalize_features`. | Added after reviewing Yermakov/GenD; keep it after the trainable visual encoder, never in cached inputs. |
 | 6 | Train on FF++ train, validate on FF++ val each epoch. Test on FF++ test + CDFv2 (cross-dataset). | User-approved scope. |
 | 7 | Existing `.npz` caches are **not** reused anywhere in PEFT. LN weights change per-step so features must be recomputed live (and recomputed again at test time with the final weights). | Correctness. |
 | 8 | Gradient checkpointing + AMP (fp16) **from day one**. Target GPU: RTX 5070 12 GB first, cluster if OOM. | Memory budget. |
@@ -207,8 +207,11 @@ class CompositePEFT(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         B, T, C, H, W = x.shape
         x = x.reshape(B * T, C, H, W)
-        feats = self.visual(x)                  # [B*T, 1024] — pre_proj CLS, no L2-norm
-        feats = feats.reshape(B, T, -1).float() # cast to fp32 before head
+        feats = self.visual(x)                  # [B*T, 1024] — pre_proj CLS
+        feats = feats.float()                   # cast to fp32 before head
+        if self.l2_normalize_features:
+            feats = F.normalize(feats, p=2, dim=-1)
+        feats = feats.reshape(B, T, -1)
         return self.temporal(feats)             # [B, 2]
 ```
 
@@ -263,7 +266,9 @@ Key points:
 - `preprocess` is passed in from the caller (obtained via
   `open_clip.create_model_and_transforms(...)[-1]`). The dataset does NOT
   import open_clip to avoid duplicate model loads.
-- **Do not L2-normalize.** (The offline pipeline does; PEFT does not.)
+- **Do not L2-normalize in the dataset.** Optional PEFT L2-normalization belongs
+  inside `CompositePEFT` after the trainable visual encoder, controlled by
+  `clip.l2_normalize_features`.
 
 Sketch:
 
@@ -877,9 +882,11 @@ number (50–150 lines).
    autograd the way module outputs do, and you'd end up with two conventions.
    The `proj = None` trick is supported by open_clip by design.
 
-2. **L2-norm is a trap.** The existing offline pipeline L2-normalizes. If you
-   copy-paste from `CLIP_embedder.py::_embed_batch`, you'll inherit the
-   `t / t.norm(dim=-1, keepdim=True)` line. Remove it for PEFT.
+2. **Dataset-side L2-norm is a trap.** The existing offline pipeline
+   L2-normalizes cached embeddings. If you copy-paste from
+   `CLIP_embedder.py::_embed_batch`, you'll inherit the
+   `t / t.norm(dim=-1, keepdim=True)` line in the wrong place. PEFT L2-norm,
+   when used, must happen model-side after the trainable visual encoder.
 
 3. **`trainable_state_dict()` must be a strict subset.** If you accidentally
    include frozen CLIP params, `model.pth` balloons past 1 GB and disk fills
@@ -933,7 +940,7 @@ number (50–150 lines).
 | Risk | Trigger | Fallback |
 |------|---------|----------|
 | OOM on 12 GB 5070 at B=1 | CUDA OOM in first forward | Move to cluster. Bump B to 2–4 there. |
-| Training diverges (val AUC ≈ 0.5) | epoch 1–3 log | Check: `visual.proj is None`, L2-norm removed, `trainable_parameters()` count sane. Lower LR to `5.0e-6`. |
+| Training diverges (val AUC ≈ 0.5) | epoch 1–3 log | Check: `visual.proj is None`, model-side L2 setting, `trainable_parameters()` count sane. Lower LR to `5.0e-6`. |
 | AMP NaNs in ln_post | loss = NaN in epoch 1 | Disable AMP (`amp_dtype: fp32`) for a smoke epoch to confirm; then hoist ln_post to fp32. |
 | Checkpoint > 200 MB | step 6 test | `trainable_state_dict()` not filtering correctly (frozen CLIP weights leaking in). Re-verify the whitelist. Expected ~135–145 MB. |
 | FF++ val AUC ≤ frozen-CLIP baseline | full run | Try `ln_scope: last_n:12`; bump LR; try `cosine_warmup`. |

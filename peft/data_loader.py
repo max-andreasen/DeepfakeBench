@@ -2,8 +2,9 @@
 Frame-level dataset for PEFT training. Reads PNG frames straight from disk
 (via the rearrange JSON) and applies CLIP's preprocess transform in workers.
 
-NO L2-normalization, NO .npz cache reuse — the LN weights change every step,
-so the existing clip/embeddings/ caches are not valid for PEFT.
+NO .npz cache reuse — the LN weights change every step, so the existing
+clip/embeddings/ caches are not valid for PEFT. Optional L2-normalization, when
+enabled, is applied inside the model after the trainable visual encoder.
 
 See peft/IMPLEMENTATION_PLAN.md §5 Step 3.
 """

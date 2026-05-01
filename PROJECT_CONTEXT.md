@@ -31,13 +31,15 @@ FF++ videos
 ```
 
 ### PEFT (model 4)
-```
-FF++ videos
-  → MTCNN face detection → frames (T=32 per video, fixed)
-  → LN-tuned CLIP ViT-L/14-336 (LayerNorm weights unfrozen; rest frozen)
-  → TransformerClassifier temporal head (optimised via Optuna)
-  → Binary sigmoid output (real / fake)
-```
+
+PEFT is the fourth model family: CLIP ViT-L/14-336 runs inside the training
+loop, only visual LayerNorm affine parameters are tuned, and a temporal head is
+trained on 32 frame features. This branch tests whether lightweight CLIP tuning
+can close the gap between the frozen-backbone CDFv2 ceiling (~72% AUC) and the
+much stronger GenD/Yermakov-style results. Full PEFT architecture, pilot search
+details, hyperparameter space, GenD paper notes, and source links are kept in
+[`peft/PEFT.md`](peft/PEFT.md). Read that file before changing PEFT code,
+configs, or search plans.
 
 **Training dataset:** FaceForensics++ (FF++), all four manipulation methods, c23 compression.
 **Evaluation dataset:** Celeb-DF-v2 (CDFv2) — zero-shot cross-dataset generalisation.
@@ -99,7 +101,7 @@ Configs: `evaluation/configs/retrain_top_k_{transformer,bigru,linear}_search*.ya
 | Transformer | `transformer_search3_10` | 5/5 | **71.95%** | seed AUCs: 71.10, 72.56, 73.78, 70.74, 71.59 |
 | BiGRU | `bigru_search2` | 5/5 | **71.28%** | seed AUCs: 68.44, 70.09, 72.72, 72.55, 72.60 |
 | Linear | `linear_search3_1` | 5/5 | **68.06%** | seed AUCs: 67.94, 67.95, 68.60, 67.37, 68.46 |
-| PEFT | — | 0 | — | Optuna search not yet run |
+| PEFT | — | 0 | — | PEFT Optuna pilot launcher prepared; search not yet run |
 
 - Observed ranking on CDFv2-clean test: Transformer (71.95%) > BiGRU (71.28%) > Linear (68.06%).
 - Transformer vs BiGRU is a small effect; BiGRU vs Linear and Transformer vs Linear are larger.
@@ -140,7 +142,13 @@ families:
    frozen baseline reuses its existing N=43 final samples.
 
 ### PEFT comparison
-PEFT is expected to land near ~90% CDFv2 AUC (Yermakov et al. baseline). If confirmed, the difference vs the strongest frozen model (~72%) will be very large, so N=5 PEFT retrains may be sufficient for the planned PEFT-vs-best-frozen comparison. Report the smaller PEFT N transparently, include PEFT per-seed AUCs and a confidence interval, and reuse the selected frozen baseline's existing N=43 samples rather than retraining it.
+
+PEFT is a separate planned comparison against the strongest frozen-backbone
+baseline. See [`peft/PEFT.md`](peft/PEFT.md) for the current PEFT status,
+pilot search command, GenD/Yermakov context, and interpretation rules. If PEFT
+lands far above the frozen baseline, a smaller PEFT seed count may be adequate
+under Welch's unequal-N test, but the final report must state the smaller PEFT
+N transparently.
 
 ---
 
@@ -148,9 +156,9 @@ PEFT is expected to land near ~90% CDFv2 AUC (Yermakov et al. baseline). If conf
 
 1. **Run the frozen-backbone final retrains (N=43)** — rerun Transformer, BiGRU, and Linear with 43 seeds each using CDFv2-clean val (early stopping) and CDFv2-clean test (evaluation). This is the final inferential dataset for the frozen comparison.
 
-2. **Run PEFT Optuna search** — search over `ln_scope`, `lr`, `weight_decay`, `warmup_epochs`; ~30 trials × 10 epochs on H100. Temporal head architecture is fixed. Val metric: CDFv2-clean val AUC.
+2. **Run the PEFT pilot/search workflow** — follow [`peft/PEFT.md`](peft/PEFT.md) and [`peft/PILOT_SEARCH.md`](peft/PILOT_SEARCH.md). The current pilot is 12 trials × 5 epochs with L2 × UA anchors, followed by 10-20 epoch extensions for the top few configs.
 
-3. **Run PEFT pilot retrains (N=5)** — retrain rank-1 PEFT config with 5 seeds to estimate variance and determine final N for the PEFT vs frozen comparison. Expected AUC ~90% (Yermakov); if confirmed, N will be much smaller than 43.
+3. **Run PEFT pilot retrains after config selection** — retrain the selected PEFT config with multiple seeds to estimate variance and determine final N for PEFT vs best frozen baseline.
 
 4. **Run Welch t-tests on final samples** — pairwise per-dataset tests using `pingouin.ttest(a, b, correction=True)`. MESI = 0.01 (1 pp). Report raw p-value, adjusted p-value where applicable, CI, and power. No Cohen's d for planning — follow Colas et al. 2018 methodology.
    - Frozen family: Transformer vs BiGRU, Transformer vs Linear, BiGRU vs Linear; Bonferroni-correct across these 3 planned comparisons.

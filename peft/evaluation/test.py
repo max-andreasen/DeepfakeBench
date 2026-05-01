@@ -89,6 +89,8 @@ def load_trained_peft_model(trained_model_dir: str, root_dir: str):
         clip_name=train_cfg["clip"]["name"],
         clip_pretrained=train_cfg["clip"]["pretrained"],
         ln_scope=train_cfg["clip"].get("ln_scope", "all"),
+        feature_layer=train_cfg["clip"].get("feature_layer", "pre_proj"),
+        l2_normalize_features=bool(train_cfg["clip"].get("l2_normalize_features", False)),
         grad_checkpointing=False,                  # eval is no_grad — checkpointing wastes time
         temporal_kwargs=train_cfg.get("temporal", {}),
     )
