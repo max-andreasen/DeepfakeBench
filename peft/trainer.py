@@ -46,6 +46,11 @@ class PEFTTrainer:
 
         self.grad_accum = int(config.get("grad_accum_steps", 1))
         self.best_auc = 0.0
+        self.last_epoch_metrics = {}
+        loss_cfg = config.get("loss", {})
+        self.ua_enabled = bool(loss_cfg.get("ua_enabled", False))
+        self.alignment_weight = float(loss_cfg.get("alignment_weight", 0.1))
+        self.uniformity_weight = float(loss_cfg.get("uniformity_weight", 0.5))
 
     def _autocast(self):
         return autocast(self.device.type,
@@ -63,12 +68,38 @@ class PEFTTrainer:
             f"reserved={reserved:.2f}GB peak={peak:.2f}GB"
         )
 
+    def _ua_losses(self, features: torch.Tensor, labels: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """Uniformity/alignment losses on normalized per-frame features.
+
+        `features` is [B, T, D] and is already L2-normalized by CompositePEFT.
+        Labels are video-level, so each frame inherits its video's binary label.
+        """
+        z = features.reshape(-1, features.shape[-1])
+        y = labels.repeat_interleave(features.shape[1])
+
+        zero = z.new_zeros(())
+        if z.shape[0] < 2:
+            return zero, zero
+
+        pairwise_sq = torch.cdist(z, z, p=2).pow(2)
+        same_class = y[:, None].eq(y[None, :])
+        not_self = ~torch.eye(z.shape[0], dtype=torch.bool, device=z.device)
+        positive_mask = same_class & not_self
+        alignment = pairwise_sq[positive_mask].mean() if positive_mask.any() else zero
+
+        upper = torch.triu(torch.ones_like(pairwise_sq, dtype=torch.bool), diagonal=1)
+        uniformity = torch.log(torch.exp(-2.0 * pairwise_sq[upper]).mean().clamp_min(1e-12))
+        return alignment, uniformity
+
     def train_epoch(self, epoch: int, train_loader, val_loader) -> float:
         self.model.train()
         if self.device.type == "cuda":
             torch.cuda.reset_peak_memory_stats()
         self.optimizer.zero_grad(set_to_none=True)
         running = 0.0
+        running_ce = 0.0
+        running_align = 0.0
+        running_uniform = 0.0
         n_batches = len(train_loader)
         n_epochs = int(self.config.get("num_epochs", "?"))
         pbar = tqdm(train_loader, desc=f"ep{epoch}", unit="batch", leave=False)
@@ -82,8 +113,23 @@ class PEFTTrainer:
 
             try:
                 with self._autocast():
-                    logits = self.model(x)
-                    loss = F.cross_entropy(logits, y) / self.grad_accum
+                    if self.ua_enabled:
+                        logits, features = self.model(x, return_features=True)
+                    else:
+                        logits = self.model(x)
+                        features = None
+
+                ce_loss = F.cross_entropy(logits.float(), y)
+                align_loss = logits.new_zeros(())
+                uniform_loss = logits.new_zeros(())
+                if self.ua_enabled and (self.alignment_weight or self.uniformity_weight):
+                    align_loss, uniform_loss = self._ua_losses(features.float(), y)
+                total_loss = (
+                    ce_loss
+                    + self.alignment_weight * align_loss
+                    + self.uniformity_weight * uniform_loss
+                )
+                loss = total_loss / self.grad_accum
 
                 self.scaler.scale(loss).backward()
             except RuntimeError:
@@ -96,42 +142,73 @@ class PEFTTrainer:
                 self.scaler.update()
                 self.optimizer.zero_grad(set_to_none=True)
 
-            running += float(loss.item()) * self.grad_accum
-            pbar.set_postfix(loss=f"{loss.item() * self.grad_accum:.4f}")
+            running += float(total_loss.detach().item())
+            running_ce += float(ce_loss.detach().item())
+            running_align += float(align_loss.detach().item())
+            running_uniform += float(uniform_loss.detach().item())
+            pbar.set_postfix(loss=f"{total_loss.detach().item():.4f}")
             if i == 0 or (i + 1) % 10 == 0:
                 self._log_cuda_memory(f"epoch {epoch} batch {i + 1}/{n_batches} after backward")
 
         avg_loss = running / max(n_batches, 1)
-        auc, acc, acc_best, best_thresh = self.eval_epoch(val_loader)
+        avg_ce = running_ce / max(n_batches, 1)
+        avg_align = running_align / max(n_batches, 1)
+        avg_uniform = running_uniform / max(n_batches, 1)
+        auc, acc, acc_best, best_thresh, val_loss = self.eval_epoch(val_loader)
         self._log_cuda_memory(f"epoch {epoch} after val")
 
         lr = self.optimizer.param_groups[0]["lr"]
         is_best = auc > self.best_auc
         flag = "  ★ new best" if is_best else ""
+        ua_log = (
+            f"ce={avg_ce:.4f}  align={avg_align:.4f}  uniform={avg_uniform:.4f}  "
+            if self.ua_enabled else ""
+        )
         self.logger.info(
             f"epoch {epoch}/{n_epochs}  "
             f"loss={avg_loss:.4f}  "
+            f"{ua_log}"
+            f"val_loss={val_loss:.4f}  "
             f"val_auc={auc:.4f}  val_acc={acc:.4f}  val_acc@best={acc_best:.4f}  "
             f"thr={best_thresh:.3f}  lr={lr:.2e}"
             f"{flag}"
         )
+        self.last_epoch_metrics = {
+            "epoch": epoch,
+            "train_loss": avg_loss,
+            "train_ce": avg_ce,
+            "train_align": avg_align,
+            "train_uniform": avg_uniform,
+            "val_loss": val_loss,
+            "val_auc": auc,
+            "val_acc": acc,
+            "val_acc_at_best": acc_best,
+            "best_threshold": best_thresh,
+            "lr": lr,
+        }
         return auc
 
     @torch.no_grad()
-    def eval_epoch(self, val_loader) -> tuple[float, float, float, float]:
+    def eval_epoch(self, val_loader) -> tuple[float, float, float, float, float]:
         self.model.eval()
         all_probs, all_labels = [], []
+        loss_sum = 0.0
+        n_examples = 0
 
         for x, y in val_loader:
             x = x.to(self.device, non_blocking=True)
+            y_device = y.to(self.device, non_blocking=True)
             with self._autocast():
                 logits = self.model(x)
+            loss_sum += float(F.cross_entropy(logits.float(), y_device, reduction="sum").item())
+            n_examples += int(y_device.numel())
             probs = torch.softmax(logits.float(), dim=1)[:, 1].cpu()
             all_probs.append(probs)
             all_labels.append(y)
 
         probs = torch.cat(all_probs).numpy()
         labels = torch.cat(all_labels).numpy()
+        val_loss = loss_sum / max(n_examples, 1)
 
         try:
             auc = float(roc_auc_score(labels, probs))
@@ -147,7 +224,7 @@ class PEFTTrainer:
             best_thresh = float("nan")
             acc_best = float("nan")
 
-        return auc, acc, acc_best, best_thresh
+        return auc, acc, acc_best, best_thresh, val_loss
 
     def save_best(self, auc: float, out_path: str) -> bool:
         if auc > self.best_auc:

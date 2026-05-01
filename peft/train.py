@@ -184,6 +184,8 @@ def main():
         clip_name=cfg["clip"]["name"],
         clip_pretrained=cfg["clip"]["pretrained"],
         ln_scope=cfg["clip"].get("ln_scope", "all"),
+        feature_layer=cfg["clip"].get("feature_layer", "pre_proj"),
+        l2_normalize_features=bool(cfg["clip"].get("l2_normalize_features", False)),
         grad_checkpointing=bool(cfg["clip"].get("grad_checkpointing", True)),
         temporal_kwargs=cfg.get("temporal", {}),
     )

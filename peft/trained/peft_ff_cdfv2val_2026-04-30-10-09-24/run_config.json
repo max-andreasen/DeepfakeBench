@@ -1,0 +1,88 @@
+{
+  "saved_utc": "2026-05-01T00:31:52.030298+00:00",
+  "config": {
+    "tag": "peft_ff_cdfv2val",
+    "root_dir": "/home/jovyan/ThesisPEFT/DeepfakeBench",
+    "split_file": "datasets/splits/FaceForensics++.csv",
+    "rearrange_json": "preprocessing/rearrangements/dataset_json_mtcnn/FaceForensics++.json",
+    "dataset_name": "FaceForensics++",
+    "num_frames": {
+      "train": 32,
+      "val": 32
+    },
+    "val_split_file": "datasets/splits/Celeb-DF-v2-clean.csv",
+    "val_rearrange_json": "preprocessing/rearrangements/dataset_json_mtcnn/Celeb-DF-v2.json",
+    "val_dataset_name": "Celeb-DF-v2",
+    "val_split": "val",
+    "clip": {
+      "name": "ViT-L-14-336-quickgelu",
+      "pretrained": "openai",
+      "ln_scope": "all",
+      "grad_checkpointing": true,
+      "amp_dtype": "fp16"
+    },
+    "temporal": {
+      "clip_embed_dim": 1024,
+      "num_frames": 32,
+      "num_classes": 2,
+      "num_layers": 8,
+      "n_heads": 8,
+      "dim_feedforward": 3072,
+      "attn_dropout": 0.1,
+      "mlp_dropout": 0.4,
+      "mlp_hidden_dim": 512
+    },
+    "optimizer": {
+      "type": "adamw",
+      "lr": 2e-05,
+      "weight_decay": 0.0005,
+      "beta1": 0.9,
+      "beta2": 0.999,
+      "eps": 1e-08
+    },
+    "lr_scheduler": "cosine_warmup",
+    "num_epochs": 20,
+    "warmup_epochs": 2,
+    "batchSize": {
+      "train": 8,
+      "val": 8
+    },
+    "grad_accum_steps": 2,
+    "workers": 16,
+    "seed": 1024,
+    "device": "cuda",
+    "log_dir": "peft/trained",
+    "save_ckpt": true,
+    "metric_scoring": "auc",
+    "max_videos": null
+  },
+  "best_val_auc": 0.8373768115942029,
+  "metrics": {
+    "per_epoch_val_auc": [
+      0.6146159420289854,
+      0.7628260869565218,
+      0.7489855072463769,
+      0.7868695652173913,
+      0.8091594202898551,
+      0.8042898550724638,
+      0.8143115942028986,
+      0.813876811594203,
+      0.8117246376811593,
+      0.8373768115942029,
+      0.8231376811594203,
+      0.8201159420289854,
+      0.8295579710144927,
+      0.8295869565217391,
+      0.8247608695652174,
+      0.8145724637681159,
+      0.8090724637681159,
+      0.8349057971014493,
+      0.8194492753623189,
+      0.8167463768115941
+    ],
+    "completed": true
+  },
+  "device": "cuda",
+  "amp_dtype": "float16",
+  "grad_accum": 2
+}

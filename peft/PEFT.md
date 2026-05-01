@@ -1,160 +1,273 @@
-# PEFT — LN-tuned CLIP ViT-L/14 + temporal transformer
+# PEFT Experiment Context
 
-Parameter-efficient fine-tuning for deepfake detection. Unfreezes only the
-LayerNorm γ/β of CLIP ViT-L/14-336 (OpenAI) — Yermakov et al. 2025 — and
-trains a from-scratch temporal transformer head on the 1024-d
-pre-projection CLS feature.
+This is the canonical context file for the PEFT workstream. Keep the root
+`PROJECT_CONTEXT.md` brief; put PEFT architecture details, paper context,
+search-space decisions, run commands, and interpretation notes here.
 
-For the design rationale and step-by-step build/test plan, see
-[`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
+For the implementation build notes, see [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md).
 
-## What this adds vs. the base repo
+## Purpose
 
-The existing pipeline (root `training/` + `clip/embed.py`) freezes CLIP, caches
-embeddings to `.npz`, and trains only a small temporal head. PEFT runs CLIP
-**inside** the training loop so its LayerNorm parameters can update — this
-means:
+The frozen-backbone models in this project train temporal heads on cached CLIP
+features. The PEFT experiment asks whether updating a very small part of CLIP
+itself, specifically the visual LayerNorm affine parameters, improves
+cross-dataset deepfake generalization on Celeb-DF-v2.
 
-- No `.npz` cache reuse — frames are read from disk each epoch.
-- A new dataset class (`peft/data_loader.py`) that streams PNG frames.
-- A composite model (`peft/models/clip_peft.py`) that owns frozen CLIP +
-  trainable LNs + the temporal head together.
-- Cross-dataset eval needs CLIP-in-the-loop too (existing CDFv2 `.npz` are
-  from frozen CLIP and aren't valid for a tuned model).
+The working hypothesis is that LN-tuned CLIP should beat the frozen-backbone
+ceiling around 72% CDFv2 AUC and move toward the much stronger results reported
+by Yermakov et al. for GenD.
 
-Zero edits to existing files outside `peft/`.
+## Current PEFT Architecture
 
-## Layout
-
-```
-peft/
-├── IMPLEMENTATION_PLAN.md     # the build spec (read this first)
-├── PEFT.md                    # this file
-├── models/clip_peft.py        # CompositePEFT
-├── data_loader.py             # FramePEFTDataset, FramePEFTTestDataset
-├── trainer.py                 # PEFTTrainer
-├── train.py                   # training entry point
-├── evaluation/
-│   ├── tester.py              # PEFTTester
-│   └── test.py                # eval entry point
-├── configs/
-│   ├── peft_ff_mtcnn.yaml         # main FF++ training config
-│   ├── peft_smoke.yaml            # 1-epoch / 10-video smoke run
-│   ├── peft_eval_ff_test.yaml     # FF++ test eval
-│   └── peft_eval_cdfv2.yaml       # CDFv2 cross-dataset eval
-├── build_split_csv.py         # one-shot: rearrange JSON → datasets/splits/<ds>.csv
-└── trained/                   # run outputs land here
+```text
+FF++ videos
+  -> MTCNN face detection -> frame PNGs
+  -> CLIP ViT-L/14-336-quickgelu, OpenAI weights
+     - CLIP backbone mostly frozen
+     - visual LayerNorm affine params trainable
+     - optional feature layer: pre_proj or block_16
+  -> optional per-frame CLS L2 normalization
+  -> temporal Transformer head over 32 frame features
+  -> binary video logits
 ```
 
-## Prerequisites
+Implemented switches:
 
-- Conda env `DeepfakeBench` with torch + open_clip (see repo root `install.sh`).
-- MTCNN-preprocessed frames already on disk and rearrange JSON at
-  `preprocessing/rearrangements/dataset_json_mtcnn/<dataset>.json`.
-- For FF++: `datasets/splits/FaceForensics++.csv` (already in repo).
-- For CDFv2: `datasets/splits/Celeb-DF-v2.csv` — generate once with
-  ```bash
-  python peft/build_split_csv.py --dataset "Celeb-DF-v2"
-  ```
+- `clip.feature_layer`: `pre_proj` or `block_16`.
+- `clip.l2_normalize_features`: whether the temporal head receives normalized
+  frame features.
+- `loss.ua_enabled`: whether to add GenD-style uniformity/alignment losses on
+  normalized per-frame CLS features.
+- `loss.alignment_weight`: default `0.1`.
+- `loss.uniformity_weight`: default `0.5`.
 
-## Smoke run (verify the pipeline)
+The trainer always builds a normalized feature copy for UA when UA is enabled,
+so UA remains meaningful even if the temporal head receives unnormalized
+features.
 
-Sanity-check the full forward+backward path on 10 train + 10 val FF++ videos.
-Useful before burning a real run.
+## Key Difference From Frozen Models
+
+The frozen pipeline under `training/` reads cached `.npz` CLIP features. PEFT
+cannot reuse those caches because CLIP LayerNorm weights change during
+training. PEFT therefore runs CLIP inside the training loop and streams frames
+from disk through `peft/data_loader.py`.
+
+Important files:
+
+- [`models/clip_peft.py`](models/clip_peft.py): CLIP wrapper, LN unfreezing,
+  feature extraction, optional L2, and temporal head wiring.
+- [`trainer.py`](trainer.py): PEFT training loop, AMP, UA loss, val loss/AUC
+  logging, checkpointing.
+- [`train.py`](train.py): single-run training entry point.
+- [`optuna_search.py`](optuna_search.py): PEFT-specific Optuna search launcher.
+- [`configs/peft_ff_cdfv2val.yaml`](configs/peft_ff_cdfv2val.yaml): current
+  FF++ train -> CDFv2-clean val PEFT model/training config and search space.
+- [`search_configs/peft_gend_pilot12.yaml`](search_configs/peft_gend_pilot12.yaml):
+  Optuna study settings for the first 12-trial pilot.
+- [`PILOT_SEARCH.md`](PILOT_SEARCH.md): exact pilot command, outputs, and
+  decision rules.
+
+## Yermakov et al. / GenD Context
+
+Paper: Yermakov, Cech, Matas, and Fritz, "Deepfake Detection that Generalizes
+Across Benchmarks" (WACV 2026).
+
+Useful links:
+
+- Accepted paper PDF: https://openaccess.thecvf.com/content/WACV2026/papers/Yermakov_Deepfake_Detection_that_Generalizes_Across_Benchmarks_WACV_2026_paper.pdf
+- arXiv page: https://arxiv.org/abs/2508.06248
+- Official GitHub repo: https://github.com/yermandy/GenD
+
+GenD architecture:
+
+- Frame-level detector, not a temporal model.
+- Encoder: CLIP ViT-L/14, PEcoreL, or DINOv3 ViT-L/16.
+- Input: 32 frames per video, face detection/alignment, 1.3x face crop margin.
+- Feature: CLS token only; patch tokens discarded.
+- Feature normalization: L2-normalized CLS feature.
+- Head: binary linear classifier per frame.
+- Trainable params: all LayerNorm affine parameters plus classifier weights.
+- Loss: cross-entropy plus uniformity/alignment on normalized features.
+- Video inference: average per-frame softmax probabilities.
+
+Reported CLIP training details from the paper:
+
+- Optimizer: Adam, betas 0.9/0.999, no weight decay.
+- Precision: bfloat16.
+- LR schedule: cosine cyclic; each 10-epoch cycle warms up for one epoch from
+  `1e-5` to `3e-4`, then decays over nine epochs to `1e-5`.
+- Batch size: 128 frame samples.
+- Most runs stopped improving after about two cycles, around 20 epochs.
+- Reported UA weights for CLIP: alignment alpha `0.1`, uniformity beta `0.5`.
+
+Important GenD findings:
+
+- The large gain comes mainly from LN tuning on top of the frozen foundation
+  encoder.
+- Uniformity/alignment adds a smaller but useful improvement.
+- Their simple temporal self-attention ablation did not noticeably improve over
+  averaging frame probabilities.
+- Reported FF++-trained GenD cross-dataset CDFv2 AUC is in the low/mid 90s,
+  far above this repo's frozen-backbone results around 72% CDFv2 AUC.
+
+Implication for this repo: the temporal Transformer is the experimental part.
+The GenD-style baseline is LN tuning + L2-normalized CLS + linear frame
+classifier + average per-frame probabilities.
+
+## Current Status
+
+The earlier 20-epoch PEFT run with the temporal Transformer reached
+`best_val_auc=0.8374` on CDFv2-clean val. It was already near `0.81` by epoch 4,
+but the best value occurred later. This supports using 5 epochs for coarse
+Optuna pruning, but not for final model selection.
+
+Current state:
+
+- PEFT model supports `pre_proj` and `block_16` features.
+- Optional model-side L2 normalization is implemented.
+- Optional GenD-style UA loss is implemented.
+- PEFT Optuna pilot launcher is implemented.
+- Pilot search has not been run yet.
+
+## Pilot Search
+
+The first PEFT search is intentionally narrow. It is designed to determine
+whether L2 and UA are worth keeping before spending many GPU hours on a larger
+search.
+
+Command:
 
 ```bash
-python peft/train.py --config peft/configs/peft_smoke.yaml
+python peft/optuna_search.py \
+  --search-config peft/search_configs/peft_gend_pilot12.yaml
 ```
 
-Expected: training log shows `trainable=34.53M total=337.9M`, one epoch
-completes, `model.pth` (~138 MB) and `run_config.json` written under
-`peft/trained/peft_smoke_<timestamp>/`.
+The search config owns the Optuna orchestration settings: base config, study
+name, number of trials, epochs, sampler, pruner, storage, output directory, and
+anchor behavior. The base PEFT config still owns the model/training defaults and
+the `search_space` block.
 
-If it OOMs at `batchSize.train: 1` with `grad_checkpointing: true`, the GPU
-is too small / contended; move to a larger card.
+The first four trials are fixed anchors:
 
-## Full FF++ training
+- L2 on, UA on
+- L2 on, UA off
+- L2 off, UA on
+- L2 off, UA off
 
-```bash
-python peft/train.py --config peft/configs/peft_ff_mtcnn.yaml
+Anchor settings:
+
+- `clip.feature_layer: pre_proj`
+- `temporal.num_layers: 1`
+- `temporal.dim_feedforward: 1024`
+- `temporal.attn_dropout: 0.0`
+- `temporal.mlp_dropout: 0.25`
+- `temporal.mlp_hidden_dim: 256`
+- `optimizer.lr: 2.0e-5`
+- `optimizer.weight_decay: 1.0e-4`
+
+The remaining trials are TPE-sampled from the `search_space` block in
+[`configs/peft_ff_cdfv2val.yaml`](configs/peft_ff_cdfv2val.yaml). The median
+pruner waits two epochs and starts after the four anchor trials, as configured
+in [`search_configs/peft_gend_pilot12.yaml`](search_configs/peft_gend_pilot12.yaml).
+
+Pilot outputs:
+
+- `study.log`: compact study-level progress.
+- `optuna_internal.log`: Optuna sampler/pruner/storage warnings and errors.
+- `study_manifest.json`: search config values, anchors, and search space.
+- `all_trials.csv`: full Optuna trials dataframe.
+- `summary.md`: state counts, wall-clock, and top-10 trials.
+- `plots/*.html`: Optuna plots when Plotly is available.
+- `trial_XXXX/trial_config.yaml`: exact merged config.
+- `trial_XXXX/trial_params.json`: Optuna overrides plus config.
+- `trial_XXXX/epoch_metrics.csv`: train loss, CE, UA components, val loss,
+  val AUC, accuracies, threshold, and LR per epoch.
+- `trial_XXXX/training.log`: full training log.
+- `trial_XXXX/run_config.json`: exact saved config and metrics.
+- `trial_XXXX/model.pth`: best trainable PEFT weights for that trial.
+
+Decision rules after the pilot:
+
+- If both L2 anchors beat both non-L2 anchors, keep L2 fixed on.
+- If both UA anchors lag their matched non-UA anchors, drop UA.
+- If UA helps only with L2, keep the combined switch and stop searching UA
+  independently.
+- If sampled trials do not beat the best anchor meaningfully, narrow around the
+  anchor settings instead of widening the search.
+- Use best validation AUC, not final epoch AUC, because overfitting after early
+  convergence is plausible.
+
+## Current Search Space
+
+Defined in [`configs/peft_ff_cdfv2val.yaml`](configs/peft_ff_cdfv2val.yaml):
+
+```yaml
+clip.feature_layer: [pre_proj, block_16]
+clip.l2_normalize_features: [true, false]
+loss.ua_enabled: [true, false]
+optimizer.lr: log-uniform [1.0e-5, 4.0e-5]
+optimizer.weight_decay: [0.0, 1.0e-5, 1.0e-4, 5.0e-4]
+temporal.num_layers: [1, 2, 4]
+temporal.dim_feedforward: [1024, 2048]
+temporal.attn_dropout: [0.0, 0.1]
+temporal.mlp_dropout: uniform [0.1, 0.4]
+temporal.mlp_hidden_dim: [256, 512]
 ```
 
-30 epochs, AdamW lr=2.0e-5, cosine schedule, fp16 + grad checkpointing,
-effective batch 8 (B=1 train × accum=8). The temporal head is from scratch.
+Fixed for the first pilot:
 
-Outputs land in `peft/trained/peft_ln_ff_mtcnn_<YYYY-MM-DD-HH-MM-SS>/`:
-- `training.log` — per-epoch train_loss + val AUC/ACC.
-- `model.pth` — trainable state dict (LN γ/β + temporal head + input_proj
-  + classifier). ~138 MB at fp32. Frozen CLIP weights are NOT saved.
-- `run_config.json` — full config + `best_val_auc` + `per_epoch_val_auc[]`
-  + completion flag. Eval scripts read this to rebuild the model.
+- `ln_scope: all`
+- `temporal.n_heads: 8`
+- `num_frames.train/val: 32`
+- `batchSize.train/val: 8`
+- `grad_accum_steps: 2`
+- `lr_scheduler: cosine_warmup`
+- `warmup_epochs: 1`
 
-## Evaluation
+## Actual Search And Selection Plan
 
-Both eval configs reference `trained_model_dir` — replace
-`<FILL_IN_AFTER_STEP_7>` with the timestamp suffix of your training run dir
-before running.
+The 12-trial run is a pilot, not the final selection step. Use it to prune the
+space and decide whether L2 and UA should remain searchable.
 
-### FF++ test split
+After the pilot:
 
-```bash
-python peft/evaluation/test.py --config peft/configs/peft_eval_ff_test.yaml
-```
+1. Keep/drop `clip.l2_normalize_features` and `loss.ua_enabled` based on the
+   four anchors.
+2. Narrow any weak dimensions from the TPE trials, especially temporal depth
+   and dropout.
+3. Run a focused search or extension pass on the reduced space. The current
+   expected extension is the top few pilot configurations trained for 10-20
+   epochs, selected by best CDFv2-clean val AUC.
+4. Treat the selected PEFT configuration as provisional until it has been
+   rerun over multiple seeds.
+5. Compare final PEFT seed results against the strongest frozen-backbone model
+   using the separate PEFT-vs-frozen Welch test described in
+   [`../PROJECT_CONTEXT.md`](../PROJECT_CONTEXT.md).
 
-### CDFv2 cross-dataset (518 official test videos)
+Do not select a PEFT config from final-epoch AUC alone. The earlier 20-epoch
+run showed early gains followed by later fluctuations, so best validation AUC
+and the full per-epoch curve should be inspected.
 
-```bash
-python peft/evaluation/test.py --config peft/configs/peft_eval_cdfv2.yaml
-```
+## Recommended Next Steps
 
-Both write to `peft/evaluation/results/<trained_dir_basename>/<run_tag>/`:
-- `results.json` — per-window + per-video metrics (acc, auc, precision,
-  recall, f1, confusion matrix, best-threshold acc) for both standard and
-  optional shuffled passes.
-- `eval_config.json` — the resolved eval config.
-- `test.log` — log of the eval run.
+1. Run the 12-trial pilot above.
+2. Inspect the four L2 x UA anchors before reading TPE importances.
+3. Extend the top few configurations to 10-20 epochs.
+4. Add a true GenD-style baseline if time allows:
+   L2-normalized per-frame CLS -> linear frame classifier -> average frame
+   softmax probabilities.
+5. Retrain the selected PEFT configuration with multiple seeds before the final
+   PEFT vs frozen-baseline statistical comparison.
 
-`<run_tag>` defaults to the config filename stem; override with `--run_tag`.
+## Gotchas
 
-### Optional: temporal-shuffle ablation
-
-Set `eval_shuffled: true` in the eval config. Shuffles the temporal axis per
-window before forward — measures how much of the model's signal comes from
-temporal ordering vs. per-frame appearance.
-
-## Reading `run_config.json`
-
-```json
-{
-  "saved_utc": "...",
-  "config":   { ... full training config ... },
-  "best_val_auc": 0.93,
-  "metrics": {
-    "per_epoch_val_auc": [0.71, 0.83, ..., 0.92],
-    "completed": true
-  },
-  "amp_dtype": "float16",
-  "grad_accum": 8,
-  ...
-}
-```
-
-`completed: false` means the loop crashed mid-training (e.g., OOM); the
-checkpoint reflects the best-so-far AUC, not necessarily the converged model.
-
-## Known gotchas
-
-- **L2-norm is intentionally absent** in the PEFT path. The frozen-CLIP
-  pipeline L2-normalizes; this one must not, or LN's learned γ is erased.
-- **`visual.proj = None`** is how we get the 1024-d pre_proj feature. Don't
-  monkey-patch hooks — open_clip supports this directly.
-- **Optimizer is built over `model.trainable_parameters()`**, not
-  `model.parameters()`. Building over all params creates AdamW state for the
-  ~300 M frozen weights and burns ~2.4 GB VRAM for nothing.
-- **T=96 frames per video is load-bearing** (feedback memory). Train-time
-  sampling takes a random 32-window from this superset; do not change.
-- **CDFv2's rearrange JSON** has overlapping video_ids across train/val/test;
-  `build_split_csv.py` handles this with a 4-column dedup. Check the printed
-  per-split counts after generating the CSV.
-- **YAML floats** must be written `2.0e-5`, never `2e-5` — PyYAML 1.1 parses
-  the latter as a string.
+- L2 normalization is model-side and configurable. Do not apply it in the
+  dataset or cached feature files.
+- Optimizers must use `model.trainable_parameters()`, otherwise AdamW state is
+  allocated for the frozen CLIP weights.
+- `pre_proj` is exposed by disabling `visual.proj`; do not replace it with an
+  ad hoc hook unless needed.
+- YAML floats should be written as `2.0e-5`, not `2e-5`, because older PyYAML
+  parsing can treat the latter as a string.
+- CDFv2 raw val and test overlap in the original split. Use
+  `datasets/splits/Celeb-DF-v2-clean.csv` for validation/test separation.
