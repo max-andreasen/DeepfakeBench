@@ -270,7 +270,12 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
                         print(f"Finish writing {label}.json")
 
     ## Celeb-DF-v1 dataset
-    ## Note: videos in Celeb-DF-v1/2 are not in the same format as in FaceForensics++ dataset
+    ## CDFv1 is used exclusively as a held-out cross-dataset test benchmark
+    ## (never as training data), so every disk video is assigned to the test
+    ## split. The original List_of_testing_videos.txt overlay is intentionally
+    ## skipped: its folder tokens (lowercase+underscore) don't match the disk
+    ## folder names (CamelCase+dash), so the historic glob produced empty
+    ## frame lists. Train/val are left empty.
     elif dataset_name == 'Celeb-DF-v1':
         dataset_path = os.path.join(dataset_root_path, dataset_name)
         dataset_dict[dataset_name] = {}
@@ -284,32 +289,12 @@ def generate_dataset_file(dataset_name, dataset_root_path, output_file_path, com
             else:
                 continue
             assert label in ['CelebDFv1_real', 'CelebDFv1_fake'], 'Invalid label: {}'.format(label)
-            dataset_dict[dataset_name][label] = {}
-            dataset_dict[dataset_name][label]['train'] = {}
-            dataset_dict[dataset_name][label]['val'] = {}
-            dataset_dict[dataset_name][label]['test'] = {}
+            dataset_dict[dataset_name].setdefault(label, {'train': {}, 'val': {}, 'test': {}})
             for video_path in os.scandir(os.path.join(dataset_path, folder.name, frame_dir)):
                 if video_path.is_dir():
                     video_name = video_path.name
                     frame_paths = [os.path.join(video_path, frame.name) for frame in os.scandir(video_path)]
-                    dataset_dict[dataset_name][label]['train'][video_name] = {'label': label, 'frames': frame_paths}
-
-        # Special case for test&val data of Celeb-DF-v1/2
-        with open(os.path.join(dataset_root_path, dataset_name, 'List_of_testing_videos.txt'), 'r') as f:
-            lines = f.readlines()
-        for line in lines:
-            if 'real' in line:
-                label = 'CelebDFv1_real'
-            elif 'synthesis' in line:
-                label = 'CelebDFv1_fake'
-            else:
-                raise ValueError(f"wrong in processing vidname {dataset_name}: {line}")
-
-            vidname = line.split('\n')[0].split('/')[-1].split('.mp4')[0]
-            frame_paths = glob.glob(
-                os.path.join(dataset_root_path, dataset_name, line.split(' ')[1].split('/')[0], frame_dir, vidname, '*png'))
-            dataset_dict[dataset_name][label]['test'][vidname] = {'label': label, 'frames': frame_paths}
-            dataset_dict[dataset_name][label]['val'][vidname] = {'label': label, 'frames': frame_paths}
+                    dataset_dict[dataset_name][label]['test'][video_name] = {'label': label, 'frames': frame_paths}
 
     ## Celeb-DF-v2 dataset
     ## Note: videos in Celeb-DF-v1/2 are not in the same format as in FaceForensics++ dataset
