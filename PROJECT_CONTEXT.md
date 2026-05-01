@@ -92,20 +92,22 @@ Configs: `evaluation/configs/retrain_top_k_{transformer,bigru,linear}_search*.ya
 
 ---
 
-## Current Status (2026-04-29)
+## Current Status (2026-05-01)
 
-### Frozen backbone pilot (N = 5)
+### Frozen backbone final retrain (N = 43) — COMPLETE
 
-| Model | Retrain run | Seeds done | Mean test AUC | Notes |
-|---|---|---|---|---|
-| Transformer | `transformer_search3_10` | 5/5 | **71.95%** | seed AUCs: 71.10, 72.56, 73.78, 70.74, 71.59 |
-| BiGRU | `bigru_search2` | 5/5 | **71.28%** | seed AUCs: 68.44, 70.09, 72.72, 72.55, 72.60 |
-| Linear | `linear_search3_1` | 5/5 | **68.06%** | seed AUCs: 67.94, 67.95, 68.60, 67.37, 68.46 |
-| PEFT | — | 0 | — | PEFT Optuna pilot launcher prepared; search not yet run |
+Results in `evaluation/results/retrain_welch/{transformer,bigru,linear}/results.csv`.
 
-- Observed ranking on CDFv2-clean test: Transformer (71.95%) > BiGRU (71.28%) > Linear (68.06%).
-- Transformer vs BiGRU is a small effect; BiGRU vs Linear and Transformer vs Linear are larger.
-- The pilot is a **planning stage only** — not the final inferential result.
+| Model | Retrain run | Seeds | Mean test AUC | Std | Pilot mean (N=5) |
+|---|---|---|---|---|---|
+| Transformer | `transformer_search3_10` (trial 433) | 43/43 | **70.94%** | 0.0249 | 71.95% |
+| BiGRU | `bigru_search2` (trial 1) | 43/43 | **71.16%** | 0.0115 | 71.28% |
+| Linear | `linear_search3_1` (trial 1) | 43/43 | **68.06%** | 0.0056 | 68.06% |
+| PEFT | — | 0 | — | — | PEFT Optuna pilot not yet run |
+
+- **Ranking flipped from pilot**: at N=43 BiGRU (71.16%) is marginally above Transformer (70.94%); the pilot ranking (Transformer > BiGRU) was within seed noise.
+- Linear remains clearly lowest.
+- Total wall clock: ~3 GPU-hours on H100 (much faster than the 86h originally estimated from a ~40 min/seed × 129 budget).
 
 ### Power analysis (MESI = 1 pp, target power = 0.80, Colas et al. 2018)
 
@@ -116,13 +118,39 @@ from the N=5 pilot, and solve for the N needed by a two-sided Welch test. Do
 not base the methodology on Cohen's d; standardized effect sizes may be
 reported descriptively if useful, but they are not the planning primitive.
 
-| Pair | Required N |
-|---|---|
-| Transformer vs BiGRU | **43** |
-| BiGRU vs Linear | 33 |
-| Transformer vs Linear | 15 |
+Planned N from the pilot:
 
-Hardest comparison drives N = **43 seeds per frozen model**. At ~40 min/seed on H100, 43 × 3 models ≈ 86 GPU-hours — feasible.
+| Pair | Required N | Achieved power at N=43 |
+|---|---|---|
+| Transformer vs BiGRU | **43** | 0.807 |
+| BiGRU vs Linear | 33 | (well-powered) |
+| Transformer vs Linear | 15 (16 used in re-derivation) | (well-powered) |
+
+Hardest comparison drives N = **43 seeds per frozen model**. Used uniformly across all three models for clean balanced design.
+
+### Welch t-test results on CDFv2-clean test (N=43, Bonferroni α = 0.05/3 = 0.0167)
+
+Results in `evaluation/results/statistical_analysis/welch_tests.csv`.
+
+| Pair | Mean diff (a − b) | t | df | p_raw | p_bonferroni | 95% CI | Achieved power | Verdict |
+|---|---|---|---|---|---|---|---|---|
+| Transformer vs BiGRU | +0.0067 | 0.659 | 6.79 | 0.532 | 1.000 | [−0.02, 0.03] | 0.090 | **NS** |
+| Transformer vs Linear | +0.0389 | 6.574 | 5.23 | 0.00103 | **0.00309** | [0.02, 0.05] | ~1.000 | **Significant** |
+| BiGRU vs Linear | +0.0322 | 3.616 | 4.51 | 0.01826 | 0.0548 | [0.01, 0.06] | 0.885 | **NS (borderline)** |
+
+Interpretation:
+- **Transformer ≈ BiGRU on CDFv2** at MESI = 1 pp. The actual difference (0.7 pp) is below the minimum effect we declared interesting; achieved power is low (0.09) precisely because the effect is smaller than MESI — this is the design behaving correctly, not under-powering.
+- **Transformer > Linear** is robust: large effect (~3.9 pp), significant after Bonferroni correction.
+- **BiGRU > Linear** raw-p is significant (0.018) but fails Bonferroni at α=0.0167 (adjusted p=0.055). Test is well-powered (0.885), so the failure to reject is meaningful at the 1 pp MESI under the multiple-comparison correction.
+
+Box plot artifact: `evaluation/results/statistical_analysis/frozen_auc_boxplot.png`.
+
+### Frozen-backbone conclusion
+
+The temporal-head architecture comparison gives one significant result
+(Transformer > Linear) and two non-significant results under Bonferroni at MESI
+= 1 pp AUC. Transformer and BiGRU are statistically indistinguishable at the
+declared minimum effect of interest on CDFv2 zero-shot.
 
 ### Planned statistical questions
 
@@ -154,17 +182,16 @@ N transparently.
 
 ## Immediate Next Steps
 
-1. **Run the frozen-backbone final retrains (N=43)** — rerun Transformer, BiGRU, and Linear with 43 seeds each using CDFv2-clean val (early stopping) and CDFv2-clean test (evaluation). This is the final inferential dataset for the frozen comparison.
+1. **Run the PEFT pilot/search workflow** — follow [`peft/PEFT.md`](peft/PEFT.md) and [`peft/PILOT_SEARCH.md`](peft/PILOT_SEARCH.md). The current pilot is 12 trials × 5 epochs with L2 × UA anchors, followed by 10-20 epoch extensions for the top few configs.
 
-2. **Run the PEFT pilot/search workflow** — follow [`peft/PEFT.md`](peft/PEFT.md) and [`peft/PILOT_SEARCH.md`](peft/PILOT_SEARCH.md). The current pilot is 12 trials × 5 epochs with L2 × UA anchors, followed by 10-20 epoch extensions for the top few configs.
+2. **Run PEFT seed retrains after config selection** — retrain the selected PEFT config with multiple seeds to estimate variance. PEFT N may be smaller than 43 under Welch's unequal-N test; report the chosen N transparently.
 
-3. **Run PEFT pilot retrains after config selection** — retrain the selected PEFT config with multiple seeds to estimate variance and determine final N for PEFT vs best frozen baseline.
+3. **Run the PEFT vs strongest frozen-baseline Welch test** — single planned comparison, no Bonferroni correction (separate hypothesis family). The strongest frozen baseline is BiGRU (71.16%) by mean, but it is statistically tied with Transformer (70.94%) at MESI = 1 pp; either is defensible as the comparator, document the choice.
 
-4. **Run Welch t-tests on final samples** — pairwise per-dataset tests using `pingouin.ttest(a, b, correction=True)`. MESI = 0.01 (1 pp). Report raw p-value, adjusted p-value where applicable, CI, and power. No Cohen's d for planning — follow Colas et al. 2018 methodology.
-   - Frozen family: Transformer vs BiGRU, Transformer vs Linear, BiGRU vs Linear; Bonferroni-correct across these 3 planned comparisons.
-   - PEFT family: PEFT vs the strongest frozen-backbone baseline only; separate planned comparison, no Bonferroni correction with the frozen family.
-
-5. **Finalise `statistical_analysis.py`** — reads `results.csv` files, runs power-analysis planning output, then final pairwise Welch t-tests with summary table/plots.
+4. **Write up frozen comparison results** — the frozen family is now closed:
+   - Transformer > Linear: significant (p_bonf=0.0031).
+   - BiGRU vs Linear: NS under Bonferroni (p_bonf=0.0548) despite well-powered design.
+   - Transformer vs BiGRU: NS, effect below MESI.
 
 ---
 

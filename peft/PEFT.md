@@ -60,10 +60,9 @@ Important files:
   logging, checkpointing.
 - [`train.py`](train.py): single-run training entry point.
 - [`optuna_search.py`](optuna_search.py): PEFT-specific Optuna search launcher.
-- [`configs/peft_ff_cdfv2val.yaml`](configs/peft_ff_cdfv2val.yaml): current
-  FF++ train -> CDFv2-clean val PEFT model/training config and search space.
 - [`search_configs/peft_gend_pilot12.yaml`](search_configs/peft_gend_pilot12.yaml):
-  Optuna study settings for the first 12-trial pilot.
+  self-contained Optuna, PEFT training, and search-space config for the first
+  12-trial pilot.
 - [`PILOT_SEARCH.md`](PILOT_SEARCH.md): exact pilot command, outputs, and
   decision rules.
 
@@ -142,10 +141,10 @@ python peft/optuna_search.py \
   --search-config peft/search_configs/peft_gend_pilot12.yaml
 ```
 
-The search config owns the Optuna orchestration settings: base config, study
-name, number of trials, epochs, sampler, pruner, storage, output directory, and
-anchor behavior. The base PEFT config still owns the model/training defaults and
-the `search_space` block.
+The search config is self-contained. It owns the Optuna orchestration settings,
+the PEFT model/training defaults, and the `training.search_space` block. Its
+`training.root_dir` is `null`, so paths resolve relative to the repo root on the
+machine running the search.
 
 The first four trials are fixed anchors:
 
@@ -165,10 +164,10 @@ Anchor settings:
 - `optimizer.lr: 2.0e-5`
 - `optimizer.weight_decay: 1.0e-4`
 
-The remaining trials are TPE-sampled from the `search_space` block in
-[`configs/peft_ff_cdfv2val.yaml`](configs/peft_ff_cdfv2val.yaml). The median
-pruner waits two epochs and starts after the four anchor trials, as configured
-in [`search_configs/peft_gend_pilot12.yaml`](search_configs/peft_gend_pilot12.yaml).
+The remaining trials are TPE-sampled from the `training.search_space` block in
+[`search_configs/peft_gend_pilot12.yaml`](search_configs/peft_gend_pilot12.yaml).
+The median pruner waits two epochs and starts after the four anchor trials, as
+configured in the same file.
 
 Pilot outputs:
 
@@ -199,7 +198,8 @@ Decision rules after the pilot:
 
 ## Current Search Space
 
-Defined in [`configs/peft_ff_cdfv2val.yaml`](configs/peft_ff_cdfv2val.yaml):
+Defined in [`search_configs/peft_gend_pilot12.yaml`](search_configs/peft_gend_pilot12.yaml)
+under `training.search_space`:
 
 ```yaml
 clip.feature_layer: [pre_proj, block_16]

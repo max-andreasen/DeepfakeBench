@@ -53,7 +53,6 @@ ANCHOR_COMMON = {
 
 
 DEFAULT_SEARCH_CONFIG = {
-    "base_config": "peft/configs/peft_ff_cdfv2val.yaml",
     "study_name": "peft_gend_pilot12",
     "n_trials": 12,
     "epochs": 5,
@@ -96,11 +95,15 @@ def deep_merge(base: dict, override: dict) -> dict:
 
 def load_search_config(path: Path) -> dict:
     cfg = deep_merge(DEFAULT_SEARCH_CONFIG, load_yaml(path))
-    required = ["base_config", "study_name", "n_trials", "epochs", "storage", "output_dir"]
+    required = ["study_name", "n_trials", "epochs", "storage", "output_dir", "training"]
     missing = [key for key in required if cfg.get(key) in (None, "")]
     if missing:
         raise ValueError(f"Search config {path} is missing required keys: {missing}")
     return cfg
+
+
+def load_training_config(search_cfg: dict) -> dict:
+    return copy.deepcopy(search_cfg["training"])
 
 
 def set_dotted(cfg: dict, key: str, value: Any) -> None:
@@ -342,7 +345,7 @@ def write_study_manifest(
         "timestamp": datetime.now().isoformat(timespec="seconds"),
         "study_name": search_cfg["study_name"],
         "search_config": str(search_config_path.resolve()),
-        "base_config": str((REPO_ROOT / search_cfg["base_config"]).resolve()),
+        "training_config_source": "embedded",
         "search_config_values": search_cfg,
         "sampler": search_cfg["sampler"]["type"],
         "pruner": search_cfg["pruner"]["type"],
@@ -459,11 +462,7 @@ def main() -> None:
     if not search_config_path.is_absolute():
         search_config_path = REPO_ROOT / search_config_path
     search_cfg = load_search_config(search_config_path)
-
-    base_config_path = Path(search_cfg["base_config"])
-    if not base_config_path.is_absolute():
-        base_config_path = REPO_ROOT / base_config_path
-    base_cfg = load_yaml(base_config_path)
+    base_cfg = load_training_config(search_cfg)
 
     study_dir = Path(search_cfg["output_dir"])
     if not study_dir.is_absolute():
@@ -497,7 +496,7 @@ def main() -> None:
     study_logger.info(f"=== Starting study '{search_cfg['study_name']}' ===")
     study_logger.info(f"Search config: {search_config_path}")
     study_logger.info(f"Search config values: {search_cfg}")
-    study_logger.info(f"Base config: {base_config_path}")
+    study_logger.info("Training config source: embedded search config")
     study_logger.info(f"Search space: {base_cfg.get('search_space', {})}")
     study_logger.info(f"Anchors: {anchors}")
 
