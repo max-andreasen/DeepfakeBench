@@ -98,13 +98,20 @@ def build_loader(catalogue_file: str, split_csv: str, split: str,
     return DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 
 
-def make_temp_split_csv(catalogue_file: str, tmp_dir: str) -> str:
-    """All videos in catalogue → split=test (for cross-dataset benchmarks)."""
+def make_temp_split_csv(catalogue_file: str, tmp_dir: str, suffix: str = "") -> str:
+    """All videos in catalogue → split=test (for cross-dataset benchmarks).
+
+    The catalogue file is conventionally named `catalogue.csv` regardless of
+    the dataset, so the suffix (typically the benchmark name) is required to
+    keep per-benchmark temp split files from clobbering each other.
+    """
     cat = pd.read_csv(catalogue_file)
     join_keys = [k for k in ['dataset', 'label_cat', 'video_id'] if k in cat.columns]
     split_df = cat[join_keys].copy()
     split_df['split'] = 'test'
-    path = os.path.join(tmp_dir, f'_split_{Path(catalogue_file).stem}.csv')
+    stem = Path(catalogue_file).stem
+    name = f"{stem}_{suffix}" if suffix else stem
+    path = os.path.join(tmp_dir, f'_split_{name}.csv')
     split_df.to_csv(path, index=False)
     return path
 
@@ -198,7 +205,7 @@ def main():
                                     b.get('split', 'test'))
             else:
                 csv_path = make_temp_split_csv(
-                    str(REPO_ROOT / b['catalogue_file']), tmp_dir
+                    str(REPO_ROOT / b['catalogue_file']), tmp_dir, suffix=name
                 )
                 split_csvs[name] = (csv_path, 'test')
 

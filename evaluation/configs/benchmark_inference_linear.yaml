@@ -1,0 +1,51 @@
+# benchmark_inference_linear.yaml
+#
+# Runs every saved seed model from the Linear N=43 retrain through every
+# listed benchmark. Output: one summary.csv row per (trial, seed, benchmark).
+
+retrain_dir: evaluation/results/retrain_welch/linear
+out_dir:     evaluation/results/benchmark_inference/linear
+
+benchmarks:
+  - name: FF++_test
+    catalogue_file: clip/embeddings/probing/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+    split_file: datasets/splits/FaceForensics++.csv
+    split: test
+
+  - name: CDFv2
+    catalogue_file: clip/embeddings/benchmarks/cdfv2_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+    split_file: datasets/splits/Celeb-DF-v2-clean.csv
+    split: test
+
+  - name: CDFv1
+    catalogue_file: clip/embeddings/benchmarks/cdfv1_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+
+  # CDFv3 test split derived from datasets/rgb/Celeb-DF-v3/List_of_testing_videos.txt
+  # (178 real + 6,095 fake = 6,273 of 48,428 catalogue rows).
+  - name: CDFv3
+    catalogue_file: clip/embeddings/benchmarks/cdfv3_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+    split_file: datasets/splits/Celeb-DF-v3.csv
+    split: test
+
+  # DFD: catalogue contains only DFD_fake (200 rows, 0 real). AUC will be NaN
+  # for every seed until DFD_real embeddings are generated. Kept in for
+  # accuracy / acc@best metrics; AUC column should be filtered downstream.
+  - name: DFD
+    catalogue_file: clip/embeddings/benchmarks/dfd_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+
+  # FaceShifter shares source video_ids with FF++; use the FF++ split
+  # remapped into FaceShifter's (FF-real, FF-FH) label_cats.
+  - name: FaceShifter
+    catalogue_file: clip/embeddings/benchmarks/faceshifter_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+    split_file: datasets/splits/FaceShifter.csv
+    split: test
+
+  # WildDF canonical test split (806 videos: 396 real + 410 fake).
+  - name: WildDF
+    catalogue_file: clip/embeddings/benchmarks/wilddf_layer16/ViT-L-14-336-quickgelu/block_16/catalogue.csv
+    split_file: datasets/splits/WildDeepfakes.csv
+    split: test
+
+num_frames: 32
+batch_size: 64
+window_aggregation: mean
