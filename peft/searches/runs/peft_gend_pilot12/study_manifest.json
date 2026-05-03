@@ -1,0 +1,292 @@
+{
+  "timestamp": "2026-05-01T11:32:26",
+  "study_name": "peft_gend_pilot12",
+  "search_config": "/home/jovyan/ThesisPEFT/DeepfakeBench/peft/search_configs/peft_gend_pilot12.yaml",
+  "training_config_source": "embedded",
+  "search_config_values": {
+    "study_name": "peft_gend_pilot12",
+    "n_trials": 12,
+    "epochs": 5,
+    "storage": "peft/searches/peft_optuna.db",
+    "output_dir": "peft/searches/runs",
+    "sampler": {
+      "type": "tpe",
+      "seed": 1024,
+      "startup_trials": 4
+    },
+    "pruner": {
+      "type": "median",
+      "warmup_epochs": 2
+    },
+    "anchors": {
+      "enabled": true
+    },
+    "training": {
+      "tag": "peft_ff_cdfv2val",
+      "root_dir": null,
+      "split_file": "datasets/splits/FaceForensics++.csv",
+      "rearrange_json": "preprocessing/rearrangements/dataset_json_mtcnn/FaceForensics++.json",
+      "dataset_name": "FaceForensics++",
+      "num_frames": {
+        "train": 32,
+        "val": 32
+      },
+      "val_split_file": "datasets/splits/Celeb-DF-v2-clean.csv",
+      "val_rearrange_json": "preprocessing/rearrangements/dataset_json_mtcnn/Celeb-DF-v2.json",
+      "val_dataset_name": "Celeb-DF-v2",
+      "val_split": "val",
+      "clip": {
+        "name": "ViT-L-14-336-quickgelu",
+        "pretrained": "openai",
+        "ln_scope": "all",
+        "feature_layer": "pre_proj",
+        "l2_normalize_features": true,
+        "grad_checkpointing": true,
+        "amp_dtype": "fp16"
+      },
+      "temporal": {
+        "clip_embed_dim": 1024,
+        "num_frames": 32,
+        "num_classes": 2,
+        "num_layers": 1,
+        "n_heads": 8,
+        "dim_feedforward": 1024,
+        "attn_dropout": 0.0,
+        "mlp_dropout": 0.25,
+        "mlp_hidden_dim": 256
+      },
+      "optimizer": {
+        "type": "adamw",
+        "lr": 2e-05,
+        "weight_decay": 0.0001,
+        "beta1": 0.9,
+        "beta2": 0.999,
+        "eps": 1e-08
+      },
+      "loss": {
+        "ua_enabled": true,
+        "alignment_weight": 0.1,
+        "uniformity_weight": 0.5
+      },
+      "lr_scheduler": "cosine_warmup",
+      "num_epochs": 5,
+      "warmup_epochs": 1,
+      "batchSize": {
+        "train": 8,
+        "val": 8
+      },
+      "grad_accum_steps": 2,
+      "workers": 16,
+      "seed": 1024,
+      "device": "cuda",
+      "log_dir": "peft/trained",
+      "save_ckpt": true,
+      "metric_scoring": "auc",
+      "max_videos": null,
+      "search_space": {
+        "clip.feature_layer": {
+          "type": "categorical",
+          "choices": [
+            "pre_proj",
+            "block_16"
+          ]
+        },
+        "clip.l2_normalize_features": {
+          "type": "categorical",
+          "choices": [
+            true,
+            false
+          ]
+        },
+        "loss.ua_enabled": {
+          "type": "categorical",
+          "choices": [
+            true,
+            false
+          ]
+        },
+        "optimizer.lr": {
+          "type": "float",
+          "range": [
+            1e-05,
+            4e-05
+          ],
+          "log": true
+        },
+        "optimizer.weight_decay": {
+          "type": "categorical",
+          "choices": [
+            0.0,
+            1e-05,
+            0.0001,
+            0.0005
+          ]
+        },
+        "temporal.num_layers": {
+          "type": "categorical",
+          "choices": [
+            1,
+            2,
+            4
+          ]
+        },
+        "temporal.dim_feedforward": {
+          "type": "categorical",
+          "choices": [
+            1024,
+            2048
+          ]
+        },
+        "temporal.attn_dropout": {
+          "type": "categorical",
+          "choices": [
+            0.0,
+            0.1
+          ]
+        },
+        "temporal.mlp_dropout": {
+          "type": "float",
+          "range": [
+            0.1,
+            0.4
+          ]
+        },
+        "temporal.mlp_hidden_dim": {
+          "type": "categorical",
+          "choices": [
+            256,
+            512
+          ]
+        }
+      }
+    }
+  },
+  "sampler": "tpe",
+  "pruner": "median",
+  "search_space": {
+    "clip.feature_layer": {
+      "type": "categorical",
+      "choices": [
+        "pre_proj",
+        "block_16"
+      ]
+    },
+    "clip.l2_normalize_features": {
+      "type": "categorical",
+      "choices": [
+        true,
+        false
+      ]
+    },
+    "loss.ua_enabled": {
+      "type": "categorical",
+      "choices": [
+        true,
+        false
+      ]
+    },
+    "optimizer.lr": {
+      "type": "float",
+      "range": [
+        1e-05,
+        4e-05
+      ],
+      "log": true
+    },
+    "optimizer.weight_decay": {
+      "type": "categorical",
+      "choices": [
+        0.0,
+        1e-05,
+        0.0001,
+        0.0005
+      ]
+    },
+    "temporal.num_layers": {
+      "type": "categorical",
+      "choices": [
+        1,
+        2,
+        4
+      ]
+    },
+    "temporal.dim_feedforward": {
+      "type": "categorical",
+      "choices": [
+        1024,
+        2048
+      ]
+    },
+    "temporal.attn_dropout": {
+      "type": "categorical",
+      "choices": [
+        0.0,
+        0.1
+      ]
+    },
+    "temporal.mlp_dropout": {
+      "type": "float",
+      "range": [
+        0.1,
+        0.4
+      ]
+    },
+    "temporal.mlp_hidden_dim": {
+      "type": "categorical",
+      "choices": [
+        256,
+        512
+      ]
+    }
+  },
+  "anchors": [
+    {
+      "clip.feature_layer": "pre_proj",
+      "optimizer.lr": 2e-05,
+      "optimizer.weight_decay": 0.0001,
+      "temporal.num_layers": 1,
+      "temporal.dim_feedforward": 1024,
+      "temporal.attn_dropout": 0.0,
+      "temporal.mlp_dropout": 0.25,
+      "temporal.mlp_hidden_dim": 256,
+      "clip.l2_normalize_features": true,
+      "loss.ua_enabled": true
+    },
+    {
+      "clip.feature_layer": "pre_proj",
+      "optimizer.lr": 2e-05,
+      "optimizer.weight_decay": 0.0001,
+      "temporal.num_layers": 1,
+      "temporal.dim_feedforward": 1024,
+      "temporal.attn_dropout": 0.0,
+      "temporal.mlp_dropout": 0.25,
+      "temporal.mlp_hidden_dim": 256,
+      "clip.l2_normalize_features": true,
+      "loss.ua_enabled": false
+    },
+    {
+      "clip.feature_layer": "pre_proj",
+      "optimizer.lr": 2e-05,
+      "optimizer.weight_decay": 0.0001,
+      "temporal.num_layers": 1,
+      "temporal.dim_feedforward": 1024,
+      "temporal.attn_dropout": 0.0,
+      "temporal.mlp_dropout": 0.25,
+      "temporal.mlp_hidden_dim": 256,
+      "clip.l2_normalize_features": false,
+      "loss.ua_enabled": true
+    },
+    {
+      "clip.feature_layer": "pre_proj",
+      "optimizer.lr": 2e-05,
+      "optimizer.weight_decay": 0.0001,
+      "temporal.num_layers": 1,
+      "temporal.dim_feedforward": 1024,
+      "temporal.attn_dropout": 0.0,
+      "temporal.mlp_dropout": 0.25,
+      "temporal.mlp_hidden_dim": 256,
+      "clip.l2_normalize_features": false,
+      "loss.ua_enabled": false
+    }
+  ]
+}
