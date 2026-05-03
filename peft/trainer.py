@@ -57,17 +57,6 @@ class PEFTTrainer:
                         dtype=self.amp_dtype,
                         enabled=self.amp_enabled)
 
-    def _log_cuda_memory(self, prefix: str):
-        if self.device.type != "cuda":
-            return
-        allocated = torch.cuda.memory_allocated() / 1024**3
-        reserved = torch.cuda.memory_reserved() / 1024**3
-        peak = torch.cuda.max_memory_allocated() / 1024**3
-        self.logger.info(
-            f"{prefix} cuda_mem allocated={allocated:.2f}GB "
-            f"reserved={reserved:.2f}GB peak={peak:.2f}GB"
-        )
-
     def _ua_losses(self, features: torch.Tensor, labels: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """Uniformity/alignment losses on normalized per-frame features.
 
@@ -93,8 +82,6 @@ class PEFTTrainer:
 
     def train_epoch(self, epoch: int, train_loader, val_loader) -> float:
         self.model.train()
-        if self.device.type == "cuda":
-            torch.cuda.reset_peak_memory_stats()
         self.optimizer.zero_grad(set_to_none=True)
         running = 0.0
         running_ce = 0.0
@@ -108,33 +95,26 @@ class PEFTTrainer:
             x = x.to(self.device, non_blocking=True)
             y = y.to(self.device, non_blocking=True)
 
-            if i == 0 or (i + 1) % 10 == 0:
-                self._log_cuda_memory(f"epoch {epoch} batch {i + 1}/{n_batches} before forward")
+            with self._autocast():
+                if self.ua_enabled:
+                    logits, features = self.model(x, return_features=True)
+                else:
+                    logits = self.model(x)
+                    features = None
 
-            try:
-                with self._autocast():
-                    if self.ua_enabled:
-                        logits, features = self.model(x, return_features=True)
-                    else:
-                        logits = self.model(x)
-                        features = None
+            ce_loss = F.cross_entropy(logits.float(), y)
+            align_loss = logits.new_zeros(())
+            uniform_loss = logits.new_zeros(())
+            if self.ua_enabled and (self.alignment_weight or self.uniformity_weight):
+                align_loss, uniform_loss = self._ua_losses(features.float(), y)
+            total_loss = (
+                ce_loss
+                + self.alignment_weight * align_loss
+                + self.uniformity_weight * uniform_loss
+            )
+            loss = total_loss / self.grad_accum
 
-                ce_loss = F.cross_entropy(logits.float(), y)
-                align_loss = logits.new_zeros(())
-                uniform_loss = logits.new_zeros(())
-                if self.ua_enabled and (self.alignment_weight or self.uniformity_weight):
-                    align_loss, uniform_loss = self._ua_losses(features.float(), y)
-                total_loss = (
-                    ce_loss
-                    + self.alignment_weight * align_loss
-                    + self.uniformity_weight * uniform_loss
-                )
-                loss = total_loss / self.grad_accum
-
-                self.scaler.scale(loss).backward()
-            except RuntimeError:
-                self._log_cuda_memory(f"epoch {epoch} batch {i + 1}/{n_batches} failed")
-                raise
+            self.scaler.scale(loss).backward()
 
             step_now = ((i + 1) % self.grad_accum == 0) or (i + 1 == n_batches)
             if step_now:
@@ -147,15 +127,12 @@ class PEFTTrainer:
             running_align += float(align_loss.detach().item())
             running_uniform += float(uniform_loss.detach().item())
             pbar.set_postfix(loss=f"{total_loss.detach().item():.4f}")
-            if i == 0 or (i + 1) % 10 == 0:
-                self._log_cuda_memory(f"epoch {epoch} batch {i + 1}/{n_batches} after backward")
 
         avg_loss = running / max(n_batches, 1)
         avg_ce = running_ce / max(n_batches, 1)
         avg_align = running_align / max(n_batches, 1)
         avg_uniform = running_uniform / max(n_batches, 1)
         auc, acc, acc_best, best_thresh, val_loss = self.eval_epoch(val_loader)
-        self._log_cuda_memory(f"epoch {epoch} after val")
 
         lr = self.optimizer.param_groups[0]["lr"]
         is_best = auc > self.best_auc

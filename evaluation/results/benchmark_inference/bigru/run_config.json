@@ -1,0 +1,17 @@
+{
+  "evaluated_utc": "2026-05-01T16:32:31.956666+00:00",
+  "retrain_dir": "evaluation/results/retrain_welch/bigru",
+  "out_dir": "evaluation/results/benchmark_inference/bigru",
+  "benchmarks": [
+    "FF++_test",
+    "CDFv2",
+    "CDFv1",
+    "CDFv3",
+    "DFD",
+    "FaceShifter",
+    "WildDF"
+  ],
+  "num_frames": 32,
+  "batch_size": 64,
+  "window_aggregation": "mean"
+}
