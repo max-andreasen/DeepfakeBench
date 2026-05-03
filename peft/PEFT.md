@@ -115,18 +115,32 @@ classifier + average per-frame probabilities.
 
 ## Current Status
 
-The earlier 20-epoch PEFT run with the temporal Transformer reached
-`best_val_auc=0.8374` on CDFv2-clean val. It was already near `0.81` by epoch 4,
-but the best value occurred later. This supports using 5 epochs for coarse
-Optuna pruning, but not for final model selection.
+**Pilot complete (2026-05-03).** The 12-trial pilot (`peft_gend_pilot12`) finished.
+Results in `peft/searches/runs/peft_gend_pilot12/`.
 
-Current state:
+Pilot conclusions:
+- L2 normalisation: **drop** — both L2 anchors lost to non-L2 counterparts.
+- UA loss: **drop** — both UA anchors lagged matched non-UA anchors.
+- `num_layers=2`: **fix** — top-3 trials all used 2; best 1-layer trial (0.792) is
+  4 pp below best 2-layer trial (0.834).
+- `mlp_hidden_dim=256`: **fix** — 512 was pruned early (single trial, but clean).
+- `attn_dropout` and `weight_decay`: remain searchable — confounding in pilot
+  prevents isolating their individual effects.
+- `block_16`: never explored by TPE (all anchors used `pre_proj`); added to search2.
+- Best pilot trial (trial 11): val AUC 0.834 at 5 epochs, still climbing.
 
-- PEFT model supports `pre_proj` and `block_16` features.
-- Optional model-side L2 normalization is implemented.
-- Optional GenD-style UA loss is implemented.
-- PEFT Optuna pilot launcher is implemented.
-- Pilot search has not been run yet.
+**Search 2 ready** (`peft/search_configs/peft_gend_search2.yaml`):
+- 30 trials, 8 epochs, median pruner (warmup 3 epochs).
+- Search space: `feature_layer` {pre_proj, block_16}, `lr` [2.5e-5, 4.5e-5],
+  `dim_feedforward` {1024, 2048}, `mlp_dropout` [0.05, 0.20],
+  `attn_dropout` {0.0, 0.1}, `weight_decay` {1e-5, 1e-4}.
+- Fixed: L2=off, UA=off, `num_layers=2`, `mlp_hidden_dim=256`.
+
+Run command:
+```bash
+python peft/optuna_search.py \
+    --search-config peft/search_configs/peft_gend_search2.yaml
+```
 
 ## Pilot Search
 
@@ -250,14 +264,13 @@ and the full per-epoch curve should be inspected.
 
 ## Recommended Next Steps
 
-1. Run the 12-trial pilot above.
-2. Inspect the four L2 x UA anchors before reading TPE importances.
-3. Extend the top few configurations to 10-20 epochs.
-4. Add a true GenD-style baseline if time allows:
-   L2-normalized per-frame CLS -> linear frame classifier -> average frame
-   softmax probabilities.
-5. Retrain the selected PEFT configuration with multiple seeds before the final
-   PEFT vs frozen-baseline statistical comparison.
+1. ~~Run the 12-trial pilot.~~ Done (2026-05-03).
+2. ~~Inspect the four L2 x UA anchors.~~ Done — both dropped.
+3. **Run search 2** (`peft_gend_search2.yaml`, 30 trials, 8 epochs).
+4. Extend the top 2–3 search2 configs to 15–20 epochs; select by best val AUC.
+5. Retrain the selected config with multiple seeds for the PEFT vs frozen Welch test.
+6. Optional: add a true GenD-style baseline (L2 + linear frame classifier +
+   average softmax) as an ablation reference point.
 
 ## Gotchas
 

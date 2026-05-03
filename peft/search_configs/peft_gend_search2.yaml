@@ -1,0 +1,135 @@
+# peft_gend_search2.yaml
+#
+# Second PEFT Optuna search, informed by the 12-trial pilot (peft_gend_pilot12).
+#
+# Decisions locked from pilot:
+#   - L2 normalisation: OFF  (both L2 anchors lost to non-L2 anchors)
+#   - UA loss:          OFF  (both UA anchors lagged matched non-UA anchors)
+#   - num_layers:       2    (1 underfits, 4 unstable; top-3 trials all used 2)
+#   - mlp_hidden_dim:   256  (512 was pruned early; only 1 trial but clean signal)
+#
+# Remaining open questions this search answers:
+#   - pre_proj vs block_16    (block_16 never explored in pilot)
+#   - lr in [2.5e-5, 4.5e-5]  (pilot best zone was 3.3-4.0e-5; slight margin added)
+#   - dim_feedforward          (1024 and 2048 both produced strong trials)
+#   - attn_dropout [0.0, 0.1]  (only 1 pilot trial used 0.1, pruned but confounded
+#                               by weight_decay=1e-5; not enough evidence to fix)
+#   - weight_decay [1e-5, 1e-4] (all 4 non-1e-4 trials pruned, but each also had
+#                                another bad param; confounding prevents fixing)
+#                               (0.0 and 5e-4 dropped — look clearly worse)
+#
+# Anchors are disabled: the L2/UA anchor mechanism in optuna_search.py does not
+# apply once both are fixed. Pure TPE from trial 0.
+#
+# Run from the repo root:
+#   python peft/optuna_search.py \
+#       --search-config peft/search_configs/peft_gend_search2.yaml
+
+study_name: peft_gend_search2
+
+n_trials: 30
+epochs: 8
+
+storage: peft/searches/peft_optuna.db
+output_dir: peft/searches/runs
+
+sampler:
+  type: tpe
+  seed: 2048
+  startup_trials: 6    # ~20% random before TPE adapts across 6 dims
+
+pruner:
+  type: median
+  warmup_epochs: 3     # allow longer warmup since cosine LR takes ~2 epochs to ramp
+
+anchors:
+  enabled: false       # L2/UA not in search_space; anchor mechanism doesn't apply
+
+training:
+  tag: peft_ff_cdfv2val_s2
+  root_dir: null
+
+  split_file: datasets/splits/FaceForensics++.csv
+  rearrange_json: preprocessing/rearrangements/dataset_json_mtcnn/FaceForensics++.json
+  dataset_name: FaceForensics++
+  num_frames: { train: 32, val: 32 }
+
+  val_split_file: datasets/splits/Celeb-DF-v2-clean.csv
+  val_rearrange_json: preprocessing/rearrangements/dataset_json_mtcnn/Celeb-DF-v2.json
+  val_dataset_name: Celeb-DF-v2
+  val_split: val
+
+  clip:
+    name: ViT-L-14-336-quickgelu
+    pretrained: openai
+    ln_scope: all
+    feature_layer: pre_proj       # default; overridden by search
+    l2_normalize_features: false  # fixed off — pilot: both L2 anchors lost
+    grad_checkpointing: true
+    amp_dtype: fp16
+
+  temporal:
+    clip_embed_dim: 1024          # correct for both pre_proj and block_16
+    num_frames: 32
+    num_classes: 2
+    num_layers: 2                 # fixed — pilot top-3 trials all used 2
+    n_heads: 8
+    dim_feedforward: 1024         # default; overridden by search
+    attn_dropout: 0.0             # default; overridden by search
+    mlp_dropout: 0.10             # default; overridden by search
+    mlp_hidden_dim: 256           # fixed — 512 was pruned early
+
+  optimizer:
+    type: adamw
+    lr: 3.5e-5                    # default; overridden by search
+    weight_decay: 1.0e-4          # default; overridden by search
+    beta1: 0.9
+    beta2: 0.999
+    eps: 1.0e-8
+
+  loss:
+    ua_enabled: false             # fixed off — pilot: both UA anchors lost
+    alignment_weight: 0.1
+    uniformity_weight: 0.5
+
+  lr_scheduler: cosine_warmup
+  num_epochs: 8
+  warmup_epochs: 1
+
+  batchSize: { train: 8, val: 8 }
+  grad_accum_steps: 2
+  workers: 16
+  seed: 2048
+  device: cuda
+
+  log_dir: peft/trained
+  save_ckpt: true
+  metric_scoring: auc
+
+  max_videos: null
+
+  search_space:
+    clip.feature_layer:
+      type: categorical
+      choices: [pre_proj, block_16]
+
+    optimizer.lr:
+      type: float
+      range: [2.5e-5, 4.5e-5]
+      log: true
+
+    temporal.dim_feedforward:
+      type: categorical
+      choices: [1024, 2048]
+
+    temporal.mlp_dropout:
+      type: float
+      range: [0.05, 0.20]
+
+    temporal.attn_dropout:
+      type: categorical
+      choices: [0.0, 0.1]
+
+    optimizer.weight_decay:
+      type: categorical
+      choices: [1.0e-5, 1.0e-4]
